@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'model/Agendament.dart';
 import 'services/agendamento_store.dart';
+import 'utils/formatters.dart';
 
 class TelaAdmin extends StatefulWidget {
   const TelaAdmin({super.key});
@@ -20,7 +21,6 @@ class _TelaAdminState extends State<TelaAdmin> {
   @override
   void initState() {
     super.initState();
-    // Garante que a data inicial seja um dia útil
     while (!store.isDiaUtil(dataSelecionadaAdmin)) {
       dataSelecionadaAdmin = dataSelecionadaAdmin.add(const Duration(days: 1));
     }
@@ -60,7 +60,6 @@ class _TelaAdminState extends State<TelaAdmin> {
           final pendentes = lista.where((item) => item.status == 'Pendente').length;
           final confirmados = lista.where((item) => item.status == 'Confirmado').length;
 
-          // Filtragem
           final listaFiltrada = lista.where((item) {
             final atendeFiltroStatus = filtroStatus == 'Todos' || item.status == filtroStatus;
             final buscaLower = busca.toLowerCase();
@@ -323,8 +322,8 @@ class _TelaAdminState extends State<TelaAdmin> {
                   child: Row(
                     children: [
                       'Todos',
-                      'Pendente',
                       'Confirmado',
+                      'Pendente',
                       'Concluído',
                       'Cancelado'
                     ].map((status) {
@@ -445,7 +444,6 @@ class _TelaAdminState extends State<TelaAdmin> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cabeçalho do Card
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -472,7 +470,6 @@ class _TelaAdminState extends State<TelaAdmin> {
 
             const SizedBox(height: 8),
 
-            // Informações do Veículo, Data e Horário
             Row(
               children: [
                 const Icon(Icons.build_circle_outlined, size: 18, color: Colors.blueAccent),
@@ -501,7 +498,6 @@ class _TelaAdminState extends State<TelaAdmin> {
 
             const Divider(height: 24),
 
-            // Botões de Ação do Admin
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -531,8 +527,8 @@ class _TelaAdminState extends State<TelaAdmin> {
                         );
                       },
                       itemBuilder: (context) => [
-                        const PopupMenuItem(value: 'Pendente', child: Text('⏳ Marcar Pendente')),
                         const PopupMenuItem(value: 'Confirmado', child: Text('✅ Marcar Confirmado')),
+                        const PopupMenuItem(value: 'Pendente', child: Text('⏳ Marcar Pendente')),
                         const PopupMenuItem(value: 'Concluído', child: Text('🎉 Marcar Concluído')),
                         const PopupMenuItem(value: 'Cancelado', child: Text('❌ Marcar Cancelado')),
                       ],
@@ -689,22 +685,32 @@ class _TelaAdminState extends State<TelaAdmin> {
                     TextField(
                       controller: telCtrl,
                       keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(labelText: 'Telefone / WhatsApp *', border: OutlineInputBorder()),
+                      inputFormatters: [TelefoneInputFormatter()],
+                      decoration: const InputDecoration(
+                        labelText: 'Telefone / WhatsApp *',
+                        hintText: '(35) 99812-0722',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: placaCtrl,
                       enabled: !isZeroKm,
+                      inputFormatters: [PlacaInputFormatter()],
                       textCapitalization: TextCapitalization.characters,
                       decoration: InputDecoration(
                         labelText: isZeroKm ? 'Veículo ZERO KM' : 'Placa do Veículo *',
+                        hintText: 'ABC-1D23 ou ABC-1234',
                         border: const OutlineInputBorder(),
                       ),
                     ),
                     CheckboxListTile(
                       title: const Text('Veículo ZERO KM', style: TextStyle(fontSize: 14)),
                       value: isZeroKm,
-                      onChanged: (val) => setModalState(() => isZeroKm = val ?? false),
+                      onChanged: (val) => setModalState(() {
+                        isZeroKm = val ?? false;
+                        if (isZeroKm) placaCtrl.clear();
+                      }),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ],
@@ -729,6 +735,20 @@ class _TelaAdminState extends State<TelaAdmin> {
                       return;
                     }
 
+                    if (!isTelefoneValido(tel)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Telefone inválido! Digite DDD + número (10 ou 11 dígitos).'), backgroundColor: Colors.red),
+                      );
+                      return;
+                    }
+
+                    if (!isZeroKm && !isPlacaValida(placa)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Placa inválida! A placa deve possuir exatamente 7 caracteres.'), backgroundColor: Colors.red),
+                      );
+                      return;
+                    }
+
                     final agendamento = Agendament()
                       ..id = '$placa-$tel-${AgendamentoStore.formatarChaveHorario(data, horario)}'
                       ..nome = nome
@@ -737,13 +757,13 @@ class _TelaAdminState extends State<TelaAdmin> {
                       ..servico = servico
                       ..data = data
                       ..horario = horario
-                      ..status = 'Confirmado';
+                      ..status = 'Confirmado'; // Status sempre 'Confirmado' ao agendar
 
                     store.salvarOuAtualizar(agendamento);
                     Navigator.pop(context);
 
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Agendamento criado com sucesso!'), backgroundColor: Colors.green),
+                      const SnackBar(content: Text('Agendamento confirmado com sucesso!'), backgroundColor: Colors.green),
                     );
                   },
                   child: const Text('Confirmar Agendamento', style: TextStyle(color: Colors.white)),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'model/Agendament.dart';
 import 'services/agendamento_store.dart';
+import 'utils/formatters.dart';
 
 class TelaAgendamento extends StatefulWidget {
   const TelaAgendamento({super.key});
@@ -23,7 +24,6 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
   @override
   void initState() {
     super.initState();
-    // Garante que a data inicial seja um dia útil (segunda a sexta)
     while (!store.isDiaUtil(dataSelecionada)) {
       dataSelecionada = dataSelecionada.add(const Duration(days: 1));
     }
@@ -110,25 +110,29 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                     ),
                     const SizedBox(height: 12),
 
-                    // Telefone
+                    // Telefone com Máscara
                     TextField(
                       keyboardType: TextInputType.phone,
                       controller: telefoneController,
+                      inputFormatters: [TelefoneInputFormatter()],
                       decoration: const InputDecoration(
                         labelText: 'Telefone / WhatsApp *',
+                        hintText: '(35) 99812-0722',
                         prefixIcon: Icon(Icons.phone),
                         border: OutlineInputBorder(),
                       ),
                     ),
                     const SizedBox(height: 12),
 
-                    // Placa do Veículo
+                    // Placa do Veículo com Máscara e Formatação
                     TextField(
                       enabled: !veiculoZeroKm,
                       controller: placaController,
+                      inputFormatters: [PlacaInputFormatter()],
                       textCapitalization: TextCapitalization.characters,
                       decoration: InputDecoration(
                         labelText: veiculoZeroKm ? 'Veículo ZERO KM - sem placa' : 'Placa do Veículo *',
+                        hintText: 'ABC-1D23 ou ABC-1234',
                         prefixIcon: const Icon(Icons.directions_car),
                         border: const OutlineInputBorder(),
                       ),
@@ -141,6 +145,9 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                       onChanged: (bool? value) {
                         setState(() {
                           veiculoZeroKm = value ?? false;
+                          if (veiculoZeroKm) {
+                            placaController.clear();
+                          }
                         });
                       },
                       controlAffinity: ListTileControlAffinity.leading,
@@ -170,7 +177,6 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                             DateTime.now().add(const Duration(days: 90)),
                           ),
                           selectableDayPredicate: (DateTime day) {
-                            // Apenas de Segunda a Sexta e se não estiver bloqueado totalmente
                             return store.isDiaUtil(day) && !store.isDiaBloqueado(day);
                           },
                           builder: (BuildContext context, Widget? child) {
@@ -194,7 +200,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                         if (selectedDate != null) {
                           setState(() {
                             dataSelecionada = selectedDate;
-                            horarioSelecionado = null; // reseta horário ao trocar data
+                            horarioSelecionado = null;
                           });
                         }
                       },
@@ -404,6 +410,26 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
       return;
     }
 
+    if (!isTelefoneValido(telefone)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Telefone inválido! Digite o DDD + número (10 ou 11 dígitos).'),
+        ),
+      );
+      return;
+    }
+
+    if (!veiculoZeroKm && !isPlacaValida(placa)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Placa inválida! A placa deve conter exatamente 7 caracteres.'),
+        ),
+      );
+      return;
+    }
+
     if (horarioSelecionado == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -422,7 +448,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
       ..servico = servicoSelecionado
       ..data = dataSelecionada
       ..horario = horarioSelecionado!
-      ..status = 'Pendente';
+      ..status = 'Confirmado'; // Status sempre 'Confirmado' ao agendar
 
     store.salvarOuAtualizar(agendamento);
 
@@ -436,7 +462,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         backgroundColor: Colors.green,
-        content: Text('Agendamento realizado/atualizado com sucesso!'),
+        content: Text('Agendamento confirmado com sucesso!'),
       ),
     );
   }
