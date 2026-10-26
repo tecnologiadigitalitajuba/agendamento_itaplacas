@@ -42,8 +42,18 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
       id = 'user_${DateTime.now().millisecondsSinceEpoch}_${(1000 + (DateTime.now().microsecond % 9000))}';
       await prefs.setString('user_unique_id', id);
     }
+
+    final savedPhone = prefs.getString('user_phone') ?? '';
+    final savedName = prefs.getString('user_name') ?? '';
+
     setState(() {
       _userId = id!;
+      if (savedPhone.isNotEmpty && telefoneController.text.isEmpty) {
+        telefoneController.text = savedPhone;
+      }
+      if (savedName.isNotEmpty && nomeController.text.isEmpty) {
+        nomeController.text = savedName;
+      }
     });
   }
 
@@ -479,9 +489,13 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
 
     store.salvarOuAtualizar(agendamento);
 
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_phone', telefone);
+    await prefs.setString('user_name', nome);
+
     nomeController.clear();
     placaController.clear();
-    // Mantém o telefone preenchido para o usuário ver seu agendamento na lista abaixo
+    telefoneController.text = telefone;
     setState(() {
       horarioSelecionado = null;
     });
