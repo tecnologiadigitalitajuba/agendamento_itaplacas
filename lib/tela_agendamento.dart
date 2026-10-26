@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'model/Agendament.dart';
 import 'services/agendamento_store.dart';
 import 'utils/formatters.dart';
@@ -20,6 +21,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
   final nomeController = TextEditingController();
   final placaController = TextEditingController();
   final telefoneController = TextEditingController();
+  String _userId = '';
 
   @override
   void initState() {
@@ -27,8 +29,21 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
     while (!store.isDiaUtil(dataSelecionada)) {
       dataSelecionada = dataSelecionada.add(const Duration(days: 1));
     }
+    _inicializarUsuarioId();
     telefoneController.addListener(() {
       setState(() {});
+    });
+  }
+
+  Future<void> _inicializarUsuarioId() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? id = prefs.getString('user_unique_id');
+    if (id == null || id.isEmpty) {
+      id = 'user_${DateTime.now().millisecondsSinceEpoch}_${(1000 + (DateTime.now().microsecond % 9000))}';
+      await prefs.setString('user_unique_id', id);
+    }
+    setState(() {
+      _userId = id!;
     });
   }
 
@@ -312,14 +327,18 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
 
             const SizedBox(height: 24),
 
-            // Lista de Meus Agendamentos (somente do telefone informado)
+            // Lista de Meus Agendamentos (do usuário atual ou telefone correspondente)
             ValueListenableBuilder<List<Agendament>>(
               valueListenable: store,
               builder: (context, lista, child) {
                 final telInformado = telefoneController.text.trim();
-                if (telInformado.isEmpty) return const SizedBox.shrink();
 
-                final meusAgendamentos = lista.where((item) => item.telefone.trim() == telInformado).toList();
+                final meusAgendamentos = lista.where((item) {
+                  bool matchUser = _userId.isNotEmpty && item.userId == _userId;
+                  bool matchTel = telInformado.isNotEmpty && item.telefone.trim() == telInformado;
+                  return matchUser || matchTel;
+                }).toList();
+
                 if (meusAgendamentos.isEmpty) return const SizedBox.shrink();
 
                 return Column(
@@ -455,7 +474,8 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
       ..servico = servicoSelecionado
       ..data = dataSelecionada
       ..horario = horarioSelecionado!
-      ..status = 'Confirmado'; // Status sempre 'Confirmado' ao agendar
+      ..status = 'Confirmado'
+      ..userId = _userId;
 
     store.salvarOuAtualizar(agendamento);
 

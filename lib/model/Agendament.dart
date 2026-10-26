@@ -8,6 +8,7 @@ class Agendament {
   String status = 'Confirmado'; // Padrão: 'Confirmado'
   String servico = 'Troca de Placa'; // 'Troca de Placa', 'Instalação de Placa'
   String observacao = '';
+  String userId = ''; // ID único do usuário/dispositivo
 
   Agendament();
 
@@ -22,6 +23,7 @@ class Agendament {
       'status': status,
       'servico': servico,
       'observacao': observacao,
+      'userId': userId,
     };
   }
 
@@ -36,6 +38,7 @@ class Agendament {
     item.status = map['status'] ?? 'Confirmado';
     item.servico = map['servico'] ?? 'Troca de Placa';
     item.observacao = map['observacao'] ?? '';
+    item.userId = map['userId'] ?? '';
     return item;
   }
 
