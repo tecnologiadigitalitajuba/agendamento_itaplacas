@@ -1,7 +1,8 @@
-import 'package:agendamento_itaplacas/tela_agendamento.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'tela_admin.dart';
+import 'tela_agendamento.dart';
 
 void main() {
   runApp(const ItaplacasApp());
@@ -18,11 +19,15 @@ class ItaplacasApp extends StatelessWidget {
         Locale('pt', 'BR'),
       ],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      title: 'Agendamento Itaplacas',
+      title: 'ITAPLACAS - Agendamentos',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1565C0)),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF0D47A1),
+          primary: const Color(0xFF0D47A1),
+          secondary: const Color(0xFF1565C0),
+        ),
         fontFamily: 'Roboto',
       ),
       home: const TelaPrincipal(),
@@ -36,15 +41,27 @@ class TelaPrincipal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFFF4F6F9),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0D47A1),
         foregroundColor: Colors.white,
-        title: const Text(
-          'ITAPLACAS',
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5),
+        title: const Row(
+          children: [
+            Icon(Icons.directions_car, size: 28),
+            SizedBox(width: 10),
+            Text(
+              'ITAPLACAS',
+              style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5),
+            ),
+          ],
         ),
-        centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.admin_panel_settings),
+            tooltip: 'Área do Administrador',
+            onPressed: () => _acessarAreaAdmin(context),
+          ),
+        ],
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -55,21 +72,74 @@ class TelaPrincipal extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 20),
 
-                  const Icon(
-                    Icons.directions_car,
-                    size: 75,
-                    color: Color(0xFF1565C0),
+                  // Banner Inicial
+                  Card(
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    color: const Color(0xFF0D47A1),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+                      child: Column(
+                        children: [
+                          const Icon(Icons.calendar_month, size: 70, color: Colors.white),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Agendamento Online',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Garanta o horário para troca ou instalação da sua placa automotiva.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 16, color: Colors.white70),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Botão Principal Agendar
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: const Color(0xFF0D47A1),
+                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const TelaAgendamento(),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.event_available, color: Color(0xFF0D47A1)),
+                            label: const Text('FAZER AGENDAMENTO'),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 36),
 
+                  // Nossos Serviços
                   const Text(
-                    'Agende seu atendimento',
+                    'Nossos Serviços',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 30,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF172B4D),
                     ),
@@ -77,148 +147,176 @@ class TelaPrincipal extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  const Text(
-                    'Agende a troca ou instalação da sua placa '
-                    'automotiva de maneira simples e rápida.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.black54,
-                      height: 1.5,
-                    ),
+                  const CartaoServico(
+                    icone: Icons.car_repair,
+                    titulo: 'Troca de Placa',
+                    descricao: 'Substituição rápida e segura da placa do seu veículo conforme padrão Mercosul.',
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  const CartaoServico(
+                    icone: Icons.directions_car_filled,
+                    titulo: 'Instalação de Placa',
+                    descricao: 'Emplacamento completo para veículos 0km ou transferências.',
                   ),
 
                   const SizedBox(height: 32),
 
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const TelaAgendamento(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.calendar_month),
-                    label: const Text('AGENDAR AGORA'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1565C0),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      textStyle: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  // Área do Administrador Card
+                  Card(
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    color: Colors.blue.shade50,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.admin_panel_settings, size: 40, color: Color(0xFF0D47A1)),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'Área do Administrador',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF0D47A1),
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Gestão completa de agendamentos, status e contatos.',
+                                  style: TextStyle(fontSize: 13, color: Colors.black54),
+                                ),
+                              ],
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => _acessarAreaAdmin(context),
+                            child: const Text('ENTRAR'),
+                          ),
+                        ],
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 48),
-
-                  const Text(
-                    'Nossos serviços',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF172B4D),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  const CartaoServico(
-                    icone: Icons.car_repair,
-                    titulo: 'Troca de placa',
-                    descricao: 'Agende a substituição da placa do seu veículo.',
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  const CartaoServico(
-                    icone: Icons.directions_car_filled,
-                    titulo: 'Instalação de placa',
-                    descricao: 'Agende a instalação da placa do seu veículo.',
-                  ),
-
-                  const SizedBox(height: 40),
-
+                  const SizedBox(height: 32),
                   const Divider(),
-
                   const SizedBox(height: 16),
 
+                  // Rodapé
                   const Text(
                     'ITAPLACAS',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
 
                   const Text(
-                    'Troca e instalação de placas automotivas',
+                    '📍 Endereço: Rua Sebastião Leite, nº 122, Varginha, Itajubá - MG',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.black54),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  const Text(
-                    'Endereço: Rua Sebastião Leite, nº 122, Varginha, Itajubá - MG',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.blue),
+                    style: TextStyle(color: Colors.black87),
                   ),
 
                   const SizedBox(height: 16),
 
-                  const Text(
-                    'Entre em contato para mais informações.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.black54),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  ElevatedButton(
+                  // Botão WhatsApp
+                  ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                      backgroundColor: Colors.green[700],
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      textStyle: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     onPressed: () async {
                       final Uri uri = Uri.parse('https://wa.me/5535998120722');
-
                       if (await canLaunchUrl(uri)) {
-                        await launchUrl(
-                          uri,
-                          mode: LaunchMode.externalApplication,
-                        );
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
                       } else {
                         if (!context.mounted) return;
-
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Não foi possível abrir o WhatsApp.'),
-                          ),
+                          const SnackBar(content: Text('Não foi possível abrir o WhatsApp.')),
                         );
                       }
                     },
-                    child: const Text('WhatsApp (35) 99812-0722'),
+                    icon: const Icon(Icons.chat),
+                    label: const Text(
+                      'FALAR NO WHATSAPP (35) 99812-0722',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _acessarAreaAdmin(BuildContext context) {
+    final pinController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.lock, color: Color(0xFF0D47A1)),
+            SizedBox(width: 8),
+            Text('Acesso Restrito'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Digite a senha de administrador para acessar o painel:'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: pinController,
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Senha (Padrão: 1234)',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.key),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D47A1)),
+            onPressed: () {
+              if (pinController.text.trim() == '1234') {
+                Navigator.pop(context); // fecha dialog
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TelaAdmin()),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    backgroundColor: Colors.red,
+                    content: Text('Senha incorreta! (Tente 1234)'),
+                  ),
+                );
+              }
+            },
+            child: const Text('Entrar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }
@@ -241,11 +339,16 @@ class CartaoServico extends StatelessWidget {
     return Card(
       elevation: 2,
       color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Row(
           children: [
-            Icon(icone, size: 40, color: const Color(0xFF1565C0)),
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: const Color(0x1A0D47A1),
+              child: Icon(icone, size: 30, color: const Color(0xFF0D47A1)),
+            ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -254,14 +357,14 @@ class CartaoServico extends StatelessWidget {
                   Text(
                     titulo,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 17,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     descricao,
-                    style: const TextStyle(color: Colors.black54, height: 1.4),
+                    style: const TextStyle(color: Colors.black54, height: 1.3),
                   ),
                 ],
               ),
