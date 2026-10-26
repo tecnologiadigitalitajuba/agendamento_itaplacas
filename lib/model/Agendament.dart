@@ -5,7 +5,7 @@ class Agendament {
   late String telefone;
   late DateTime data;
   String horario = '08:30'; // ex: '08:30', '09:00', '14:30'
-  String status = 'Pendente'; // 'Pendente', 'Confirmado', 'Concluído', 'Cancelado'
+  String status = 'Confirmado'; // Padrão: 'Confirmado'
   String servico = 'Troca de Placa'; // 'Troca de Placa', 'Instalação de Placa'
   String observacao = '';
 
