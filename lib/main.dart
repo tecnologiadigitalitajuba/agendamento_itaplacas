@@ -1,10 +1,23 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'firebase_options.dart';
 import 'tela_admin.dart';
 import 'tela_agendamento.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+  } catch (e) {
+    debugPrint('Aviso: Inicializando Firebase em modo de compatibilidade/local: $e');
+  }
+
   runApp(const ItaplacasApp());
 }
 
@@ -300,7 +313,7 @@ class TelaPrincipal extends StatelessWidget {
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D47A1)),
             onPressed: () {
               if (pinController.text.trim() == '1234') {
-                Navigator.pop(context); // fecha dialog
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const TelaAdmin()),
