@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import '../model/Agendament.dart';
 
@@ -11,8 +13,10 @@ class AgendamentoStore extends ValueNotifier<List<Agendament>> {
   // Horários específicos bloqueados pelo Admin (Formato: 'YYYY-MM-DD_HH:mm')
   final ValueNotifier<Set<String>> horariosBloqueados = ValueNotifier({});
 
+  bool _isFirebaseInicializado = false;
+
   AgendamentoStore._internal() : super([]) {
-    _carregarExemplosInicial();
+    _conectarFirestore();
   }
 
   // Horários de funcionamento: Segunda a Sexta, 8:30 às 17:30 de 30 em 30 min (intervalo de almoço das 12:00 às 13:00)
@@ -41,6 +45,43 @@ class AgendamentoStore extends ValueNotifier<List<Agendament>> {
 
   static String formatarChaveHorario(DateTime data, String horario) {
     return '${formatarChaveData(data)}_$horario';
+  }
+
+  Future<void> _conectarFirestore() async {
+    try {
+      if (Firebase.apps.isNotEmpty) {
+        _isFirebaseInicializado = true;
+      } else {
+        await Firebase.initializeApp();
+        _isFirebaseInicializado = true;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Firestore executando em modo local/fallback: $e');
+      }
+    }
+
+    if (_isFirebaseInicializado) {
+      // Escuta coleção de agendamentos em tempo real
+      FirebaseFirestore.instance.collection('agendamentos').snapshots().listen((snapshot) {
+        final lista = snapshot.docs.map((doc) => Agendament.fromMap(doc.data(), doc.id)).toList();
+        value = lista;
+      });
+
+      // Escuta dias bloqueados em tempo real
+      FirebaseFirestore.instance.collection('dias_bloqueados').snapshots().listen((snapshot) {
+        final setDias = snapshot.docs.map((doc) => doc.id).toSet();
+        diasBloqueados.value = setDias;
+      });
+
+      // Escuta horários bloqueados em tempo real
+      FirebaseFirestore.instance.collection('horarios_bloqueados').snapshots().listen((snapshot) {
+        final setHorarios = snapshot.docs.map((doc) => doc.id).toSet();
+        horariosBloqueados.value = setHorarios;
+      });
+    } else {
+      _carregarExemplosInicial();
+    }
   }
 
   bool isDiaUtil(DateTime data) {
@@ -76,24 +117,38 @@ class AgendamentoStore extends ValueNotifier<List<Agendament>> {
     return todosHorarios.where((h) => isHorarioDisponivel(data, h)).toList();
   }
 
-  void toggleBloqueioDia(DateTime data) {
-    final setDias = Set<String>.from(diasBloqueados.value);
+  Future<void> toggleBloqueioDia(DateTime data) async {
     final chave = formatarChaveData(data);
+    final setDias = Set<String>.from(diasBloqueados.value);
+
     if (setDias.contains(chave)) {
       setDias.remove(chave);
+      if (_isFirebaseInicializado) {
+        await FirebaseFirestore.instance.collection('dias_bloqueados').doc(chave).delete();
+      }
     } else {
       setDias.add(chave);
+      if (_isFirebaseInicializado) {
+        await FirebaseFirestore.instance.collection('dias_bloqueados').doc(chave).set({'bloqueado': true});
+      }
     }
     diasBloqueados.value = setDias;
   }
 
-  void toggleBloqueioHorario(DateTime data, String horario) {
-    final setHorarios = Set<String>.from(horariosBloqueados.value);
+  Future<void> toggleBloqueioHorario(DateTime data, String horario) async {
     final chave = formatarChaveHorario(data, horario);
+    final setHorarios = Set<String>.from(horariosBloqueados.value);
+
     if (setHorarios.contains(chave)) {
       setHorarios.remove(chave);
+      if (_isFirebaseInicializado) {
+        await FirebaseFirestore.instance.collection('horarios_bloqueados').doc(chave).delete();
+      }
     } else {
       setHorarios.add(chave);
+      if (_isFirebaseInicializado) {
+        await FirebaseFirestore.instance.collection('horarios_bloqueados').doc(chave).set({'bloqueado': true});
+      }
     }
     horariosBloqueados.value = setHorarios;
   }
@@ -128,7 +183,7 @@ class AgendamentoStore extends ValueNotifier<List<Agendament>> {
     value = [exemplo1, exemplo2];
   }
 
-  void salvarOuAtualizar(Agendament agendamento) {
+  Future<void> salvarOuAtualizar(Agendament agendamento) async {
     final lista = List<Agendament>.from(value);
 
     final indexExistente = lista.indexWhere((item) {
@@ -142,20 +197,38 @@ class AgendamentoStore extends ValueNotifier<List<Agendament>> {
     }
 
     value = lista;
+
+    if (_isFirebaseInicializado) {
+      await FirebaseFirestore.instance
+          .collection('agendamentos')
+          .doc(agendamento.id)
+          .set(agendamento.toMap());
+    }
   }
 
-  void alterarStatus(String id, String novoStatus) {
+  Future<void> alterarStatus(String id, String novoStatus) async {
     final lista = List<Agendament>.from(value);
     final idx = lista.indexWhere((i) => i.id == id);
     if (idx != -1) {
       lista[idx].status = novoStatus;
       value = lista;
     }
+
+    if (_isFirebaseInicializado) {
+      await FirebaseFirestore.instance
+          .collection('agendamentos')
+          .doc(id)
+          .update({'status': novoStatus});
+    }
   }
 
-  void remover(String id) {
+  Future<void> remover(String id) async {
     final lista = List<Agendament>.from(value);
     lista.removeWhere((i) => i.id == id);
     value = lista;
+
+    if (_isFirebaseInicializado) {
+      await FirebaseFirestore.instance.collection('agendamentos').doc(id).delete();
+    }
   }
 }
