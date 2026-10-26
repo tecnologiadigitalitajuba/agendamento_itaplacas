@@ -535,6 +535,12 @@ class _TelaAdminState extends State<TelaAdmin> {
                     ),
 
                     IconButton(
+                      icon: const Icon(Icons.edit, color: Color(0xFF1565C0)),
+                      tooltip: 'Editar Agendamento',
+                      onPressed: () => _abrirDialogEditarAgendamento(item),
+                    ),
+
+                    IconButton(
                       icon: const Icon(Icons.delete, color: Colors.redAccent),
                       tooltip: 'Excluir Agendamento',
                       onPressed: () => _confirmarExclusao(item),
@@ -820,6 +826,165 @@ class _TelaAdminState extends State<TelaAdmin> {
           ),
         ],
       ),
+    );
+  }
+
+  void _abrirDialogEditarAgendamento(Agendament item) {
+    final nomeController = TextEditingController(text: item.nome);
+    final telefoneController = TextEditingController(text: item.telefone);
+    final placaController = TextEditingController(text: item.placa == 'ZERO KM' ? '' : item.placa);
+    bool zeroKm = item.placa == 'ZERO KM';
+    String servicoAtual = item.servico;
+    String statusAtual = item.status;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Row(
+                children: [
+                  const Icon(Icons.edit, color: Color(0xFF0D47A1)),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text('Editar: ${item.nome}', style: const TextStyle(fontSize: 18))),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: nomeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nome do Cliente',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: telefoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Telefone',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.phone),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: placaController,
+                            enabled: !zeroKm,
+                            decoration: InputDecoration(
+                              labelText: 'Placa',
+                              border: const OutlineInputBorder(),
+                              prefixIcon: const Icon(Icons.directions_car),
+                              filled: zeroKm,
+                              fillColor: zeroKm ? Colors.grey.shade200 : null,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Column(
+                          children: [
+                            const Text('Zero KM', style: TextStyle(fontSize: 12)),
+                            Checkbox(
+                              value: zeroKm,
+                              onChanged: (val) {
+                                setStateDialog(() {
+                                  zeroKm = val ?? false;
+                                  if (zeroKm) placaController.text = 'ZERO KM';
+                                  else placaController.text = '';
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: ['Troca de Placa', 'Instalação de Placa'].contains(servicoAtual) ? servicoAtual : 'Troca de Placa',
+                      decoration: const InputDecoration(
+                        labelText: 'Serviço',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.build_circle),
+                      ),
+                      items: ['Troca de Placa', 'Instalação de Placa']
+                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) setStateDialog(() => servicoAtual = val);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: ['Confirmado', 'Pendente', 'Concluído', 'Cancelado'].contains(statusAtual) ? statusAtual : 'Confirmado',
+                      decoration: const InputDecoration(
+                        labelText: 'Status',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.flag),
+                      ),
+                      items: ['Confirmado', 'Pendente', 'Concluído', 'Cancelado']
+                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) setStateDialog(() => statusAtual = val);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D47A1)),
+                  onPressed: () {
+                    final nome = nomeController.text.trim();
+                    final tel = telefoneController.text.trim();
+                    final placa = zeroKm ? 'ZERO KM' : placaController.text.trim().toUpperCase();
+
+                    if (nome.isEmpty || tel.isEmpty || placa.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          backgroundColor: Colors.red,
+                          content: Text('Preencha todos os campos obrigatórios!'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    item.nome = nome;
+                    item.telefone = tel;
+                    item.placa = placa;
+                    item.servico = servicoAtual;
+                    item.status = statusAtual;
+
+                    store.salvarOuAtualizar(item);
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        backgroundColor: Colors.green,
+                        content: Text('Agendamento atualizado com sucesso!'),
+                      ),
+                    );
+                  },
+                  child: const Text('Salvar Alterações', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
