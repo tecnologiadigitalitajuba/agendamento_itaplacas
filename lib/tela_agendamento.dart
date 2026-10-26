@@ -461,7 +461,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
 
     nomeController.clear();
     placaController.clear();
-    telefoneController.clear();
+    // Mantém o telefone preenchido para o usuário ver seu agendamento na lista abaixo
     setState(() {
       horarioSelecionado = null;
     });
