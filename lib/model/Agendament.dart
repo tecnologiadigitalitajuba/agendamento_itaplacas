@@ -4,6 +4,7 @@ class Agendament {
   late String placa;
   late String telefone;
   late DateTime data;
+  String horario = '08:30'; // ex: '08:30', '09:00', '14:30'
   String status = 'Pendente'; // 'Pendente', 'Confirmado', 'Concluído', 'Cancelado'
   String servico = 'Troca de Placa'; // 'Troca de Placa', 'Instalação de Placa'
   String observacao = '';
@@ -16,6 +17,6 @@ class Agendament {
   String toString() {
     final dataFormatada =
         '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}';
-    return '$nome ($placa) - $dataFormatada';
+    return '$nome ($placa) - $dataFormatada às $horario';
   }
 }

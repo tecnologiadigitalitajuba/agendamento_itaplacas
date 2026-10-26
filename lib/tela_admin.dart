@@ -12,9 +12,19 @@ class TelaAdmin extends StatefulWidget {
 
 class _TelaAdminState extends State<TelaAdmin> {
   final store = AgendamentoStore();
+  DateTime dataSelecionadaAdmin = DateTime.now();
   String filtroStatus = 'Todos';
   String busca = '';
   final buscaController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Garante que a data inicial seja um dia útil
+    while (!store.isDiaUtil(dataSelecionadaAdmin)) {
+      dataSelecionadaAdmin = dataSelecionadaAdmin.add(const Duration(days: 1));
+    }
+  }
 
   @override
   void dispose() {
@@ -45,7 +55,8 @@ class _TelaAdminState extends State<TelaAdmin> {
           final agendamentosHoje = lista.where((item) =>
               item.data.year == hoje.year &&
               item.data.month == hoje.month &&
-              item.data.day == hoje.day).length;
+              item.data.day == hoje.day &&
+              item.status != 'Cancelado').length;
           final pendentes = lista.where((item) => item.status == 'Pendente').length;
           final confirmados = lista.where((item) => item.status == 'Confirmado').length;
 
@@ -65,7 +76,7 @@ class _TelaAdminState extends State<TelaAdmin> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Cards de Resumo KPI
+                // Cards KPI
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final isMobile = constraints.maxWidth < 600;
@@ -87,6 +98,192 @@ class _TelaAdminState extends State<TelaAdmin> {
                 ),
 
                 const SizedBox(height: 20),
+
+                // SEÇÃO 1: GERENCIAMENTO DE CALENDÁRIO E HORÁRIOS
+                Card(
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.calendar_month, color: Color(0xFF0D47A1)),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Agenda & Bloqueios',
+                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1)),
+                                ),
+                              ],
+                            ),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1565C0),
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: () async {
+                                final DateTime? selected = await showDatePicker(
+                                  context: context,
+                                  initialDate: dataSelecionadaAdmin,
+                                  firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                                  lastDate: DateTime.now().add(const Duration(days: 180)),
+                                  selectableDayPredicate: (day) => store.isDiaUtil(day),
+                                );
+                                if (selected != null) {
+                                  setState(() {
+                                    dataSelecionadaAdmin = selected;
+                                  });
+                                }
+                              },
+                              icon: const Icon(Icons.event, size: 18),
+                              label: Text(
+                                '${dataSelecionadaAdmin.day.toString().padLeft(2, '0')}/'
+                                '${dataSelecionadaAdmin.month.toString().padLeft(2, '0')}/'
+                                '${dataSelecionadaAdmin.year}',
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Painel do Dia Selecionado com Controle de Bloqueio do Dia
+                        ValueListenableBuilder<Set<String>>(
+                          valueListenable: store.diasBloqueados,
+                          builder: (context, dias, child) {
+                            final ehDiaBloqueado = store.isDiaBloqueado(dataSelecionadaAdmin);
+                            return Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: ehDiaBloqueado ? Colors.red.shade50 : Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: ehDiaBloqueado ? Colors.red : Colors.blue),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    ehDiaBloqueado ? Icons.block : Icons.check_circle_outline,
+                                    color: ehDiaBloqueado ? Colors.red : Colors.blue[800],
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      ehDiaBloqueado
+                                          ? 'Status do Dia: DIA BLOQUEADO (Nenhum cliente pode agendar)'
+                                          : 'Status do Dia: Aberto para Agendamentos (Segunda a Sexta)',
+                                      style: TextStyle(
+                                        color: ehDiaBloqueado ? Colors.red : Colors.blue[900],
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: ehDiaBloqueado ? Colors.green : Colors.red,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        store.toggleBloqueioDia(dataSelecionadaAdmin);
+                                      });
+                                    },
+                                    child: Text(ehDiaBloqueado ? 'Desbloquear Dia' : 'Bloquear Dia'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        const Text(
+                          'Horários do Dia (Clique para Agendar para Cliente ou Bloquear/Desbloquear):',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        // Grid de Horários do Dia Selecionado
+                        ValueListenableBuilder<Set<String>>(
+                          valueListenable: store.horariosBloqueados,
+                          builder: (context, horarios, child) {
+                            final chaveData = AgendamentoStore.formatarChaveData(dataSelecionadaAdmin);
+                            final ehDiaBloqueado = store.isDiaBloqueado(dataSelecionadaAdmin);
+
+                            return Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: AgendamentoStore.todosHorarios.map((horario) {
+                                final ehBloqueadoAdmin = store.isHorarioBloqueadoAdmin(dataSelecionadaAdmin, horario);
+                                final agendamentoOcupado = lista.cast<Agendament?>().firstWhere(
+                                      (i) =>
+                                          i != null &&
+                                          AgendamentoStore.formatarChaveData(i.data) == chaveData &&
+                                          i.horario == horario &&
+                                          i.status != 'Cancelado',
+                                      orElse: () => null,
+                                    );
+
+                                Color corCard;
+                                String textoLabel;
+                                IconData icone;
+
+                                if (ehDiaBloqueado || ehBloqueadoAdmin) {
+                                  corCard = Colors.red;
+                                  textoLabel = '$horario (Bloqueado)';
+                                  icone = Icons.lock;
+                                } else if (agendamentoOcupado != null) {
+                                  corCard = Colors.blue[800]!;
+                                  textoLabel = '$horario (${agendamentoOcupado.nome.split(" ").first})';
+                                  icone = Icons.person;
+                                } else {
+                                  corCard = Colors.green[700]!;
+                                  textoLabel = '$horario (Livre)';
+                                  icone = Icons.add_circle_outline;
+                                }
+
+                                return ActionChip(
+                                  avatar: Icon(icone, size: 16, color: Colors.white),
+                                  label: Text(
+                                    textoLabel,
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  ),
+                                  backgroundColor: corCard,
+                                  onPressed: () {
+                                    _gerenciarOpcoesHorarioAdmin(
+                                      dataSelecionadaAdmin,
+                                      horario,
+                                      agendamentoOcupado,
+                                      ehBloqueadoAdmin,
+                                    );
+                                  },
+                                );
+                              }).toList(),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // SEÇÃO 2: LISTA GERAL DE AGENDAMENTOS E BUSCA
+                Text(
+                  'Todos os Agendamentos',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF0D47A1),
+                      ),
+                ),
+                const SizedBox(height: 12),
 
                 // Campo de Busca
                 TextField(
@@ -160,8 +357,8 @@ class _TelaAdminState extends State<TelaAdmin> {
                   Container(
                     padding: const EdgeInsets.all(32),
                     alignment: Alignment.center,
-                    child: Column(
-                      children: const [
+                    child: const Column(
+                      children: [
                         Icon(Icons.inbox, size: 64, color: Colors.grey),
                         SizedBox(height: 12),
                         Text(
@@ -275,22 +472,16 @@ class _TelaAdminState extends State<TelaAdmin> {
 
             const SizedBox(height: 8),
 
-            // Informações do Veículo e Contato
+            // Informações do Veículo, Data e Horário
             Row(
               children: [
                 const Icon(Icons.build_circle_outlined, size: 18, color: Colors.blueAccent),
                 const SizedBox(width: 6),
-                Text(
-                  item.servico,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
+                Text(item.servico, style: const TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(width: 16),
                 const Icon(Icons.directions_car, size: 18, color: Colors.grey),
                 const SizedBox(width: 6),
-                Text(
-                  item.placa,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
+                Text(item.placa, style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
 
@@ -302,9 +493,9 @@ class _TelaAdminState extends State<TelaAdmin> {
                 const SizedBox(width: 6),
                 Text('Tel: ${item.telefone}'),
                 const SizedBox(width: 16),
-                const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
+                const Icon(Icons.access_time, size: 18, color: Colors.grey),
                 const SizedBox(width: 6),
-                Text('Data: $dataFormatada'),
+                Text('$dataFormatada às ${item.horario}', style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
 
@@ -314,7 +505,6 @@ class _TelaAdminState extends State<TelaAdmin> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Botão de Contato WhatsApp
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
@@ -328,7 +518,6 @@ class _TelaAdminState extends State<TelaAdmin> {
 
                 Row(
                   children: [
-                    // Menu para Alterar Status
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.edit_note, color: Color(0xFF1565C0)),
                       tooltip: 'Alterar Status',
@@ -349,7 +538,6 @@ class _TelaAdminState extends State<TelaAdmin> {
                       ],
                     ),
 
-                    // Botão Excluir
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.redAccent),
                       tooltip: 'Excluir Agendamento',
@@ -365,13 +553,216 @@ class _TelaAdminState extends State<TelaAdmin> {
     );
   }
 
+  void _gerenciarOpcoesHorarioAdmin(
+      DateTime data, String horario, Agendament? agendamento, bool ehBloqueado) {
+    final dataFormatada =
+        '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}';
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Horário: $horario em $dataFormatada',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+
+              if (agendamento != null) ...[
+                ListTile(
+                  leading: const Icon(Icons.person, color: Colors.blue),
+                  title: Text(agendamento.nome, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text('Placa: ${agendamento.placa} | Tel: ${agendamento.telefone} | Status: ${agendamento.status}'),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _abrirWhatsAppCliente(agendamento);
+                  },
+                  icon: const Icon(Icons.chat),
+                  label: const Text('Enviar Mensagem WhatsApp'),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                  onPressed: () {
+                    store.remover(agendamento.id);
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Agendamento removido!')),
+                    );
+                  },
+                  icon: const Icon(Icons.delete),
+                  label: const Text('Cancelar / Remover Agendamento'),
+                ),
+              ] else ...[
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0D47A1),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _modalAgendarParaCliente(data, horario);
+                  },
+                  icon: const Icon(Icons.add_task),
+                  label: const Text('Agendar para um Cliente'),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: ehBloqueado ? Colors.green : Colors.orange[800],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    store.toggleBloqueioHorario(data, horario);
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(ehBloqueado
+                            ? 'Horário $horario desbloqueado!'
+                            : 'Horário $horario bloqueado para clientes!'),
+                      ),
+                    );
+                  },
+                  icon: Icon(ehBloqueado ? Icons.lock_open : Icons.lock),
+                  label: Text(ehBloqueado ? 'Desbloquear este Horário' : 'Bloquear este Horário'),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _modalAgendarParaCliente(DateTime data, String horario) {
+    final nomeCtrl = TextEditingController();
+    final telCtrl = TextEditingController();
+    final placaCtrl = TextEditingController();
+    bool isZeroKm = false;
+    String servico = 'Troca de Placa';
+
+    final dataFormatada =
+        '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}';
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              title: Text('Agendar para Cliente ($dataFormatada às $horario)'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      initialValue: servico,
+                      decoration: const InputDecoration(labelText: 'Serviço'),
+                      items: ['Troca de Placa', 'Instalação de Placa']
+                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) setModalState(() => servico = val);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: nomeCtrl,
+                      decoration: const InputDecoration(labelText: 'Nome do Cliente *', border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: telCtrl,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(labelText: 'Telefone / WhatsApp *', border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: placaCtrl,
+                      enabled: !isZeroKm,
+                      textCapitalization: TextCapitalization.characters,
+                      decoration: InputDecoration(
+                        labelText: isZeroKm ? 'Veículo ZERO KM' : 'Placa do Veículo *',
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Veículo ZERO KM', style: TextStyle(fontSize: 14)),
+                      value: isZeroKm,
+                      onChanged: (val) => setModalState(() => isZeroKm = val ?? false),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D47A1)),
+                  onPressed: () {
+                    final nome = nomeCtrl.text.trim();
+                    final tel = telCtrl.text.trim();
+                    final placa = isZeroKm ? 'ZERO KM' : placaCtrl.text.trim().toUpperCase();
+
+                    if (nome.isEmpty || tel.isEmpty || (!isZeroKm && placa.isEmpty)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Preencha os campos obrigatórios!'), backgroundColor: Colors.red),
+                      );
+                      return;
+                    }
+
+                    final agendamento = Agendament()
+                      ..id = '$placa-$tel-${AgendamentoStore.formatarChaveHorario(data, horario)}'
+                      ..nome = nome
+                      ..placa = placa
+                      ..telefone = tel
+                      ..servico = servico
+                      ..data = data
+                      ..horario = horario
+                      ..status = 'Confirmado';
+
+                    store.salvarOuAtualizar(agendamento);
+                    Navigator.pop(context);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Agendamento criado com sucesso!'), backgroundColor: Colors.green),
+                    );
+                  },
+                  child: const Text('Confirmar Agendamento', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _abrirWhatsAppCliente(Agendament item) async {
     final telApenasNumeros = item.telefone.replaceAll(RegExp(r'\D'), '');
     final dataFormatada =
         '${item.data.day.toString().padLeft(2, '0')}/${item.data.month.toString().padLeft(2, '0')}/${item.data.year}';
     final mensagem = Uri.encodeComponent(
       'Olá ${item.nome}! Aqui é da ITAPLACAS. '
-      'Referente ao seu agendamento de ${item.servico} para o dia $dataFormatada (Placa: ${item.placa}).',
+      'Referente ao seu agendamento de ${item.servico} para o dia $dataFormatada às ${item.horario} (Placa: ${item.placa}).',
     );
     final Uri uri = Uri.parse('https://wa.me/55$telApenasNumeros?text=$mensagem');
 

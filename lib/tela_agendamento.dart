@@ -12,12 +12,22 @@ class TelaAgendamento extends StatefulWidget {
 class _TelaAgendamentoState extends State<TelaAgendamento> {
   bool veiculoZeroKm = false;
   DateTime dataSelecionada = DateTime.now();
+  String? horarioSelecionado;
   String servicoSelecionado = 'Troca de Placa';
 
   final store = AgendamentoStore();
   final nomeController = TextEditingController();
   final placaController = TextEditingController();
   final telefoneController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Garante que a data inicial seja um dia útil (segunda a sexta)
+    while (!store.isDiaUtil(dataSelecionada)) {
+      dataSelecionada = dataSelecionada.add(const Duration(days: 1));
+    }
+  }
 
   @override
   void dispose() {
@@ -141,7 +151,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                     const SizedBox(height: 12),
 
                     // Seleção de Data
-                    const Text('Data do Agendamento *', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text('Data do Agendamento * (Segunda a Sexta)', style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
 
                     ElevatedButton.icon(
@@ -155,6 +165,14 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                         final DateTime? selectedDate = await showDatePicker(
                           context: context,
                           initialDate: dataSelecionada,
+                          firstDate: DateUtils.dateOnly(DateTime.now()),
+                          lastDate: DateUtils.dateOnly(
+                            DateTime.now().add(const Duration(days: 90)),
+                          ),
+                          selectableDayPredicate: (DateTime day) {
+                            // Apenas de Segunda a Sexta e se não estiver bloqueado totalmente
+                            return store.isDiaUtil(day) && !store.isDiaBloqueado(day);
+                          },
                           builder: (BuildContext context, Widget? child) {
                             return Theme(
                               data: ThemeData.light().copyWith(
@@ -171,15 +189,12 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                               child: child!,
                             );
                           },
-                          firstDate: DateUtils.dateOnly(DateTime.now()),
-                          lastDate: DateUtils.dateOnly(
-                            DateTime.now().add(const Duration(days: 90)),
-                          ),
                         );
 
                         if (selectedDate != null) {
                           setState(() {
                             dataSelecionada = selectedDate;
+                            horarioSelecionado = null; // reseta horário ao trocar data
                           });
                         }
                       },
@@ -194,7 +209,78 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
 
                     const SizedBox(height: 20),
 
-                    // Botão Salvar
+                    // Seleção de Horário
+                    const Text(
+                      'Horários Disponíveis (08:30 às 17:30 - Fechado de 12h às 13h) *',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 8),
+
+                    ValueListenableBuilder<List<Agendament>>(
+                      valueListenable: store,
+                      builder: (context, lista, child) {
+                        final ehDiaBloqueado = store.isDiaBloqueado(dataSelecionada);
+
+                        if (ehDiaBloqueado) {
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red.shade200),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.block, color: Colors.red),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Atendimento indisponível nesta data.',
+                                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: AgendamentoStore.todosHorarios.map((horario) {
+                            final disponivel = store.isHorarioDisponivel(dataSelecionada, horario);
+                            final selecionado = horarioSelecionado == horario;
+
+                            return ChoiceChip(
+                              label: Text(horario),
+                              selected: selecionado,
+                              disabledColor: Colors.grey.shade200,
+                              selectedColor: Colors.green[700],
+                              labelStyle: TextStyle(
+                                color: !disponivel
+                                    ? Colors.grey.shade500
+                                    : selecionado
+                                        ? Colors.white
+                                        : Colors.black87,
+                                fontWeight: selecionado || disponivel ? FontWeight.bold : FontWeight.normal,
+                              ),
+                              avatar: !disponivel ? const Icon(Icons.lock_clock, size: 16, color: Colors.grey) : null,
+                              onSelected: disponivel
+                                  ? (bool val) {
+                                      setState(() {
+                                        horarioSelecionado = val ? horario : null;
+                                      });
+                                    }
+                                  : null,
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Botão Confirmar Agendamento
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green[700],
@@ -283,7 +369,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
           children: [
             const SizedBox(height: 4),
             Text('Serviço: ${item.servico} | Placa: ${item.placa}'),
-            Text('Data: $dataFormatada'),
+            Text('Data: $dataFormatada às ${item.horario}', style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
         trailing: Container(
@@ -318,13 +404,24 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
       return;
     }
 
+    if (horarioSelecionado == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Por favor, selecione um horário disponível!'),
+        ),
+      );
+      return;
+    }
+
     final agendamento = Agendament()
-      ..id = '$placa-$telefone'
+      ..id = '$placa-$telefone-${AgendamentoStore.formatarChaveHorario(dataSelecionada, horarioSelecionado!)}'
       ..nome = nome
       ..placa = placa
       ..telefone = telefone
       ..servico = servicoSelecionado
       ..data = dataSelecionada
+      ..horario = horarioSelecionado!
       ..status = 'Pendente';
 
     store.salvarOuAtualizar(agendamento);
@@ -332,6 +429,9 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
     nomeController.clear();
     placaController.clear();
     telefoneController.clear();
+    setState(() {
+      horarioSelecionado = null;
+    });
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -354,6 +454,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
         placaController.text = item.placa;
       }
       dataSelecionada = item.data;
+      horarioSelecionado = item.horario;
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
