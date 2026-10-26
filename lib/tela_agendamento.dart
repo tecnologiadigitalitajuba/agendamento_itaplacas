@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'model/Agendament.dart';
 import 'services/agendamento_store.dart';
 import 'utils/formatters.dart';
@@ -471,6 +472,17 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
         const SnackBar(
           backgroundColor: Colors.red,
           content: Text('Por favor, selecione um horário disponível!'),
+        ),
+      );
+      return;
+    }
+
+    if (store.isHorarioNoPassado(dataSelecionada, horarioSelecionado!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+              'Não é permitido agendar em dias ou horários do passado!'),
         ),
       );
       return;

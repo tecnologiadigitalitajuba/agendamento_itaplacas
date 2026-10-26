@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import 'model/Agendament.dart';
 import 'services/agendamento_store.dart';
 import 'utils/formatters.dart';
@@ -751,6 +752,15 @@ class _TelaAdminState extends State<TelaAdmin> {
                     if (!isZeroKm && !isPlacaValida(placa)) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Placa inválida! A placa deve possuir exatamente 7 caracteres.'), backgroundColor: Colors.red),
+                      );
+                      return;
+                    }
+
+                    if (store.isHorarioNoPassado(data, horario)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text(
+                            'Não é permitido agendar em dias ou horários do passado!'),
+                            backgroundColor: Colors.red),
                       );
                       return;
                     }

@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import 'firebase_options.dart';
 import 'tela_admin.dart';
 import 'tela_agendamento.dart';
@@ -91,13 +92,15 @@ class TelaPrincipal extends StatelessWidget {
                   // Banner Inicial
                   Card(
                     elevation: 3,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
                     color: const Color(0xFF0D47A1),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
                       child: Column(
                         children: [
-                          const Icon(Icons.calendar_month, size: 70, color: Colors.white),
+                          const Icon(Icons.calendar_month, size: 70,
+                              color: Colors.white),
                           const SizedBox(height: 16),
                           const Text(
                             'Agendamento Online',
@@ -112,7 +115,8 @@ class TelaPrincipal extends StatelessWidget {
                           const Text(
                             'Garanta o horário para troca ou instalação da sua placa automotiva.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 16, color: Colors.white70),
+                            style: TextStyle(
+                                fontSize: 16, color: Colors.white70),
                           ),
                           const SizedBox(height: 24),
 

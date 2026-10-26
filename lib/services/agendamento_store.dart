@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
+
 import '../model/Agendament.dart';
 
 class AgendamentoStore extends ValueNotifier<List<Agendament>> {
@@ -105,8 +106,33 @@ class AgendamentoStore extends ValueNotifier<List<Agendament>> {
         item.status != 'Cancelado');
   }
 
+  bool isHorarioNoPassado(DateTime data, String horario) {
+    final agora = DateTime.now();
+    final hoje = DateTime(agora.year, agora.month, agora.day);
+    final dataApenas = DateTime(data.year, data.month, data.day);
+
+    if (dataApenas.isBefore(hoje)) {
+      return true;
+    }
+
+    if (dataApenas.isAtSameMomentAs(hoje)) {
+      final partes = horario.split(':');
+      if (partes.length == 2) {
+        final hora = int.tryParse(partes[0]) ?? 0;
+        final minuto = int.tryParse(partes[1]) ?? 0;
+        final horarioDateTime = DateTime(
+            data.year, data.month, data.day, hora, minuto);
+        if (horarioDateTime.isBefore(agora)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   bool isHorarioDisponivel(DateTime data, String horario) {
     if (isDiaBloqueado(data)) return false;
+    if (isHorarioNoPassado(data, horario)) return false;
     if (isHorarioBloqueadoAdmin(data, horario)) return false;
     if (isHorarioOcupadoCliente(data, horario)) return false;
     return true;
@@ -184,26 +210,65 @@ class AgendamentoStore extends ValueNotifier<List<Agendament>> {
   }
 
   Future<void> salvarOuAtualizar(Agendament agendamento) async {
+    if (isHorarioNoPassado(agendamento.data, agendamento.horario)) {
+      throw Exception(
+          'Não é permitido realizar agendamentos em dias ou horários do passado.');
+    }
+
     final lista = List<Agendament>.from(value);
 
-    final indexExistente = lista.indexWhere((item) {
-      return item.id == agendamento.id;
+    final placaNova = agendamento.placa.trim().toUpperCase();
+    final nomeNovo = agendamento.nome.trim().toLowerCase();
+    final telNovo = agendamento.telefone.replaceAll(RegExp(r'\D'), '');
+
+    // 1. Verificar por ID exato
+    final indexPorId = lista.indexWhere((item) => item.id == agendamento.id);
+
+    // 2. Verificar se já existe agendamento com a mesma placa, nome e telefone
+    final indexPorDados = lista.indexWhere((item) {
+      final itemPlaca = item.placa.trim().toUpperCase();
+      final itemNome = item.nome.trim().toLowerCase();
+      final itemTel = item.telefone.replaceAll(RegExp(r'\D'), '');
+      return itemPlaca == placaNova && itemNome == nomeNovo &&
+          itemTel == telNovo;
     });
 
-    if (indexExistente != -1) {
-      lista[indexExistente] = agendamento;
+    if (indexPorId != -1) {
+      lista[indexPorId] = agendamento;
+      if (_isFirebaseInicializado) {
+        await FirebaseFirestore.instance
+            .collection('agendamentos')
+            .doc(agendamento.id)
+            .set(agendamento.toMap());
+      }
+    } else if (indexPorDados != -1) {
+      // Substituir agendamento existente do mesmo cliente/veículo (placa, nome e telefone iguais)
+      final agendamentoAntigo = lista[indexPorDados];
+
+      if (_isFirebaseInicializado && agendamentoAntigo.id != agendamento.id) {
+        await FirebaseFirestore.instance.collection('agendamentos').doc(
+            agendamentoAntigo.id).delete();
+      }
+
+      lista[indexPorDados] = agendamento;
+
+      if (_isFirebaseInicializado) {
+        await FirebaseFirestore.instance
+            .collection('agendamentos')
+            .doc(agendamento.id)
+            .set(agendamento.toMap());
+      }
     } else {
       lista.insert(0, agendamento);
+      if (_isFirebaseInicializado) {
+        await FirebaseFirestore.instance
+            .collection('agendamentos')
+            .doc(agendamento.id)
+            .set(agendamento.toMap());
+      }
     }
 
     value = lista;
-
-    if (_isFirebaseInicializado) {
-      await FirebaseFirestore.instance
-          .collection('agendamentos')
-          .doc(agendamento.id)
-          .set(agendamento.toMap());
-    }
   }
 
   Future<void> alterarStatus(String id, String novoStatus) async {
