@@ -32,46 +32,44 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyA_SUA_API_KEY_AQUI',
-    appId: '1:1234567890:web:abcdef123456',
-    messagingSenderId: '1234567890',
-    projectId: 'agendamento-itaplacas',
-    authDomain: 'agendamento-itaplacas.firebaseapp.com',
-    storageBucket: 'agendamento-itaplacas.appspot.com',
+    apiKey: 'AIzaSyCe_8-zkLGLJ0N4aObJ4FhoGef_24k5M8Y',
+    appId: '1:299882572158:web:be4a15651c0f9f71e12b2f',
+    messagingSenderId: '299882572158',
+    projectId: 'agendamentovistoriad-664a1bf6',
+    authDomain: 'agendamentovistoriad-664a1bf6.firebaseapp.com',
+    storageBucket: 'agendamentovistoriad-664a1bf6.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyA_SUA_API_KEY_AQUI',
-    appId: '1:1234567890:android:abcdef123456',
-    messagingSenderId: '1234567890',
-    projectId: 'agendamento-itaplacas',
-    storageBucket: 'agendamento-itaplacas.appspot.com',
+    apiKey: 'AIzaSyB7iY52PwalhdmHi_3ANd2GLm83f4a5Pbo',
+    appId: '1:299882572158:android:6526252f226c62aae12b2f',
+    messagingSenderId: '299882572158',
+    projectId: 'agendamentovistoriad-664a1bf6',
+    storageBucket: 'agendamentovistoriad-664a1bf6.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyA_SUA_API_KEY_AQUI',
-    appId: '1:1234567890:ios:abcdef123456',
-    messagingSenderId: '1234567890',
-    projectId: 'agendamento-itaplacas',
-    storageBucket: 'agendamento-itaplacas.appspot.com',
+    apiKey: 'AIzaSyC_mvUKL13r1UkURCMNdBbAhgY-A9svRtw',
+    appId: '1:299882572158:ios:fceef01f342b52a7e12b2f',
+    messagingSenderId: '299882572158',
+    projectId: 'agendamentovistoriad-664a1bf6',
+    storageBucket: 'agendamentovistoriad-664a1bf6.firebasestorage.app',
     iosBundleId: 'com.example.agendamentoItaplacas',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyA_SUA_API_KEY_AQUI',
-    appId: '1:1234567890:ios:abcdef123456',
-    messagingSenderId: '1234567890',
-    projectId: 'agendamento-itaplacas',
-    storageBucket: 'agendamento-itaplacas.appspot.com',
+    apiKey: 'AIzaSyC_mvUKL13r1UkURCMNdBbAhgY-A9svRtw',
+    appId: '1:299882572158:ios:fceef01f342b52a7e12b2f',
+    messagingSenderId: '299882572158',
+    projectId: 'agendamentovistoriad-664a1bf6',
+    storageBucket: 'agendamentovistoriad-664a1bf6.firebasestorage.app',
     iosBundleId: 'com.example.agendamentoItaplacas',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyA_SUA_API_KEY_AQUI',
-    appId: '1:1234567890:web:abcdef123456',
-    messagingSenderId: '1234567890',
-    projectId: 'agendamento-itaplacas',
-    authDomain: 'agendamento-itaplacas.firebaseapp.com',
-    storageBucket: 'agendamento-itaplacas.appspot.com',
+    apiKey: 'AIzaSyCe_8-zkLGLJ0N4aObJ4FhoGef_24k5M8Y',
+    appId: '1:299882572158:web:c64a9aa89b275585e12b2f',
+    messagingSenderId: '299882572158',
+    projectId: 'agendamentovistoriad-664a1bf6',
+    authDomain: 'agendamentovistoriad-664a1bf6.firebaseapp.com',
+    storageBucket: 'agendamentovistoriad-664a1bf6.firebasestorage.app',
   );
 }

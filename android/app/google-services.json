@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "299882572158",
+    "project_id": "agendamentovistoriad-664a1bf6",
+    "storage_bucket": "agendamentovistoriad-664a1bf6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:299882572158:android:6526252f226c62aae12b2f",
+        "android_client_info": {
+          "package_name": "com.example.agendamento_itaplacas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7iY52PwalhdmHi_3ANd2GLm83f4a5Pbo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
