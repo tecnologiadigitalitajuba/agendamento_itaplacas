@@ -431,7 +431,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
     );
   }
 
-  void salvarAgendamento() {
+  Future<void> salvarAgendamento() async {
     final nome = nomeController.text.trim();
     final telefone = telefoneController.text.trim();
     final placa = veiculoZeroKm ? 'ZERO KM' : placaController.text.trim().toUpperCase();
