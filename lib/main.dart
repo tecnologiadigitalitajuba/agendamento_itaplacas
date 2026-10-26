@@ -279,40 +279,65 @@ class TelaPrincipal extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.lock, color: Color(0xFF0D47A1)),
+            Icon(Icons.admin_panel_settings, color: Color(0xFF0D47A1)),
             SizedBox(width: 8),
-            Text('Acesso Restrito'),
+            Text('Painel Administrativo'),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Digite a senha de administrador para acessar o painel:'),
+            const Text(
+              'Digite a senha de administrador para acessar o painel:',
+              style: TextStyle(fontSize: 14, color: Colors.black87),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: pinController,
               obscureText: true,
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.text,
               autofocus: true,
               decoration: const InputDecoration(
-                labelText: 'Senha (Padrão: 1234)',
+                labelText: 'Senha de Administrador',
                 border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.key),
+                prefixIcon: Icon(Icons.lock_outline),
               ),
+              onSubmitted: (_) {
+                if (pinController.text.trim() == 'Itaplacas@2025') {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const TelaAdmin()),
+                  );
+                } else {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: Colors.red,
+                      content: Text('Senha incorreta. Acesso negado.'),
+                    ),
+                  );
+                }
+              },
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D47A1)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0D47A1),
+              foregroundColor: Colors.white,
+            ),
             onPressed: () {
-              if (pinController.text.trim() == '1234') {
+              if (pinController.text.trim() == 'Itaplacas@2025') {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
@@ -322,12 +347,12 @@ class TelaPrincipal extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     backgroundColor: Colors.red,
-                    content: Text('Senha incorreta! (Tente 1234)'),
+                    content: Text('Senha incorreta. Acesso negado.'),
                   ),
                 );
               }
             },
-            child: const Text('Entrar', style: TextStyle(color: Colors.white)),
+            child: const Text('Entrar'),
           ),
         ],
       ),
