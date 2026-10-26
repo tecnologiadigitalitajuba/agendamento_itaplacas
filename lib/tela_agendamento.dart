@@ -27,6 +27,9 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
     while (!store.isDiaUtil(dataSelecionada)) {
       dataSelecionada = dataSelecionada.add(const Duration(days: 1));
     }
+    telefoneController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -309,11 +312,15 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
 
             const SizedBox(height: 24),
 
-            // Lista de Meus Agendamentos
+            // Lista de Meus Agendamentos (somente do telefone informado)
             ValueListenableBuilder<List<Agendament>>(
               valueListenable: store,
               builder: (context, lista, child) {
-                if (lista.isEmpty) return const SizedBox.shrink();
+                final telInformado = telefoneController.text.trim();
+                if (telInformado.isEmpty) return const SizedBox.shrink();
+
+                final meusAgendamentos = lista.where((item) => item.telefone.trim() == telInformado).toList();
+                if (meusAgendamentos.isEmpty) return const SizedBox.shrink();
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -326,7 +333,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                           ),
                     ),
                     const SizedBox(height: 12),
-                    for (var item in lista) _cardAgendamentoCliente(item),
+                    for (var item in meusAgendamentos) _cardAgendamentoCliente(item),
                   ],
                 );
               },
