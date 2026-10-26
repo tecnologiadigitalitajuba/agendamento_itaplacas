@@ -106,20 +106,20 @@ class AgendamentoStore extends ValueNotifier<List<Agendament>> {
     }
 
     final exemplo1 = Agendament()
-      ..id = 'ABC1D23-35999998888'
+      ..id = 'ABC-1D23-(35) 99999-8888'
       ..nome = 'Carlos Silva'
-      ..placa = 'ABC1D23'
-      ..telefone = '35999998888'
+      ..placa = 'ABC-1D23'
+      ..telefone = '(35) 99999-8888'
       ..data = dataUtil
       ..horario = '09:00'
       ..servico = 'Troca de Placa'
-      ..status = 'Pendente';
+      ..status = 'Confirmado';
 
     final exemplo2 = Agendament()
-      ..id = 'ZERO KM-35988887777'
+      ..id = 'ZERO KM-(35) 98888-7777'
       ..nome = 'Mariana Oliveira'
       ..placa = 'ZERO KM'
-      ..telefone = '35988887777'
+      ..telefone = '(35) 98888-7777'
       ..data = dataUtil
       ..horario = '14:30'
       ..servico = 'Instalação de Placa'
