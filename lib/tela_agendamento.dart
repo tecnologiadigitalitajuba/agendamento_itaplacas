@@ -478,7 +478,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                       isCompact ? 'Data *' : 'Data do Agendamento * (Seg-Sex)',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: isCompact ? 12 : 14,
+                        fontSize: isCompact ? 14 : 14,
                       ),
                     ),
                     TextButton.icon(
@@ -524,15 +524,17 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                           });
                         }
                       },
-                      icon: Icon(Icons.edit_calendar, size: isCompact ? 14 : 16),
+                      icon: Icon(
+                          Icons.edit_calendar, size: isCompact ? 16 : 16),
                       label: Text(
                         '${dataSelecionada.day.toString().padLeft(2, '0')}/${dataSelecionada.month.toString().padLeft(2, '0')}/${dataSelecionada.year}',
-                        style: TextStyle(fontSize: isCompact ? 11 : 12, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: isCompact ? 13 : 14,
+                            fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: isCompact ? 4 : 8),
+                SizedBox(height: isCompact ? 3 : 8),
 
                 // Calendário do Cliente
                 _buildCalendarioCliente(isCompact: isCompact || isPC),
@@ -553,7 +555,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                     isCompact ? 'Horários *' : 'Horários Disponíveis (08:30 às 17:30) *',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: isCompact ? 12 : 14,
+                      fontSize: isCompact ? 14 : 14,
                     ),
                   ),
                   SizedBox(height: isCompact ? 4 : 8),
