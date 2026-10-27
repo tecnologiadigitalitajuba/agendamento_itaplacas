@@ -33,18 +33,40 @@ class _TelaAdminState extends State<TelaAdmin> {
     super.dispose();
   }
 
+  List<DateTime> _getDiasProximos() {
+    final List<DateTime> dias = [];
+    DateTime cursor = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    int added = 0;
+    while (added < 15) {
+      if (store.isDiaUtil(cursor)) {
+        dias.add(cursor);
+        added++;
+      }
+      cursor = cursor.add(const Duration(days: 1));
+    }
+    return dias;
+  }
+
+  int _getQtdAgendamentosNoDia(List<Agendament> lista, DateTime data) {
+    final chave = AgendamentoStore.formatarChaveData(data);
+    return lista.where((i) =>
+        AgendamentoStore.formatarChaveData(i.data) == chave &&
+        i.status != 'Cancelado').length;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0D47A1),
         foregroundColor: Colors.white,
+        elevation: 0,
         title: const Row(
           children: [
-            Icon(Icons.admin_panel_settings),
-            SizedBox(width: 8),
-            Text('Painel Administrativo', style: TextStyle(fontWeight: FontWeight.bold)),
+            Icon(Icons.admin_panel_settings, size: 24),
+            SizedBox(width: 10),
+            Text('Painel Administrativo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
           ],
         ),
       ),
@@ -61,50 +83,59 @@ class _TelaAdminState extends State<TelaAdmin> {
           final pendentes = lista.where((item) => item.status == 'Pendente').length;
           final confirmados = lista.where((item) => item.status == 'Confirmado').length;
 
+          // Filtrar agendamentos do dia selecionado ou busca geral
+          final chaveDataSelecionada = AgendamentoStore.formatarChaveData(dataSelecionadaAdmin);
           final listaFiltrada = lista.where((item) {
+            final atendeData = AgendamentoStore.formatarChaveData(item.data) == chaveDataSelecionada;
             final atendeFiltroStatus = filtroStatus == 'Todos' || item.status == filtroStatus;
             final buscaLower = busca.toLowerCase();
             final atendeBusca = busca.isEmpty ||
                 item.nome.toLowerCase().contains(buscaLower) ||
                 item.placa.toLowerCase().contains(buscaLower) ||
                 item.telefone.toLowerCase().contains(buscaLower);
-            return atendeFiltroStatus && atendeBusca;
+            
+            // Se houver texto na busca, busca em todos os dias; senão, filtra pelo dia selecionado
+            if (busca.isNotEmpty) {
+              return atendeFiltroStatus && atendeBusca;
+            }
+            return atendeData && atendeFiltroStatus;
           }).toList();
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Cards KPI
+                // Cards KPI Modernos
                 LayoutBuilder(
                   builder: (context, constraints) {
-                    final isMobile = constraints.maxWidth < 600;
+                    final isMobile = constraints.maxWidth < 650;
                     return GridView.count(
                       crossAxisCount: isMobile ? 2 : 4,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: isMobile ? 1.6 : 2.0,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: isMobile ? 1.7 : 2.2,
                       children: [
-                        _cardKPI('Total', '$totalAgendamentos', Icons.format_list_bulleted, Colors.blue),
-                        _cardKPI('Hoje', '$agendamentosHoje', Icons.today, Colors.purple),
-                        _cardKPI('Pendentes', '$pendentes', Icons.hourglass_top, Colors.orange),
-                        _cardKPI('Confirmados', '$confirmados', Icons.check_circle, Colors.green),
+                        _cardKPI('Total', '$totalAgendamentos', Icons.format_list_bulleted, Colors.blue.shade700),
+                        _cardKPI('Hoje', '$agendamentosHoje', Icons.today, Colors.purple.shade700),
+                        _cardKPI('Pendentes', '$pendentes', Icons.hourglass_top, Colors.orange.shade800),
+                        _cardKPI('Confirmados', '$confirmados', Icons.check_circle, Colors.green.shade700),
                       ],
                     );
                   },
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-                // SEÇÃO 1: GERENCIAMENTO DE CALENDÁRIO E HORÁRIOS
+                // SEÇÃO 1: CALENDÁRIO COM QUANTIDADES DE AGENDAMENTOS POR DIA
                 Card(
-                  elevation: 3,
+                  elevation: 2,
+                  shadowColor: Colors.black12,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -113,26 +144,35 @@ class _TelaAdminState extends State<TelaAdmin> {
                           children: [
                             const Row(
                               children: [
-                                Icon(Icons.calendar_month, color: Color(0xFF0D47A1)),
-                                SizedBox(width: 8),
+                                Icon(Icons.calendar_month, color: Color(0xFF0D47A1), size: 22),
+                                SizedBox(width: 10),
                                 Text(
-                                  'Agenda & Bloqueios',
+                                  'Agenda Diária & Contagem',
                                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1)),
                                 ),
                               ],
                             ),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1565C0),
-                                foregroundColor: Colors.white,
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF0D47A1),
+                                side: const BorderSide(color: Color(0xFF0D47A1)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
                               onPressed: () async {
                                 final DateTime? selected = await showDatePicker(
                                   context: context,
                                   initialDate: dataSelecionadaAdmin,
-                                  firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                                  firstDate: DateTime.now().subtract(const Duration(days: 60)),
                                   lastDate: DateTime.now().add(const Duration(days: 180)),
                                   selectableDayPredicate: (day) => store.isDiaUtil(day),
+                                  builder: (context, child) {
+                                    return Theme(
+                                      data: ThemeData.light().copyWith(
+                                        colorScheme: const ColorScheme.light(primary: Color(0xFF0D47A1)),
+                                      ),
+                                      child: child!,
+                                    );
+                                  },
                                 );
                                 if (selected != null) {
                                   setState(() {
@@ -140,19 +180,103 @@ class _TelaAdminState extends State<TelaAdmin> {
                                   });
                                 }
                               },
-                              icon: const Icon(Icons.event, size: 18),
+                              icon: const Icon(Icons.date_range, size: 18),
                               label: Text(
                                 '${dataSelecionadaAdmin.day.toString().padLeft(2, '0')}/'
                                 '${dataSelecionadaAdmin.month.toString().padLeft(2, '0')}/'
                                 '${dataSelecionadaAdmin.year}',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
                           ],
                         ),
 
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
 
-                        // Painel do Dia Selecionado com Controle de Bloqueio do Dia
+                        // Barra Horizontal de Dias com Contagem de Agendamentos
+                        SizedBox(
+                          height: 85,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _getDiasProximos().length,
+                            itemBuilder: (context, index) {
+                              final dia = _getDiasProximos()[index];
+                              final isSelecionado = AgendamentoStore.formatarChaveData(dia) ==
+                                  AgendamentoStore.formatarChaveData(dataSelecionadaAdmin);
+                              final qtd = _getQtdAgendamentosNoDia(lista, dia);
+                              final diaSemana = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'][dia.weekday % 7];
+
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    dataSelecionadaAdmin = dia;
+                                  });
+                                },
+                                child: Container(
+                                  width: 70,
+                                  margin: const EdgeInsets.only(right: 10),
+                                  decoration: BoxDecoration(
+                                    color: isSelecionado ? const Color(0xFF0D47A1) : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isSelecionado ? const Color(0xFF0D47A1) : Colors.grey.shade300,
+                                      width: isSelecionado ? 2 : 1,
+                                    ),
+                                    boxShadow: isSelecionado
+                                        ? [BoxShadow(color: const Color(0xFF0D47A1).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))]
+                                        : [],
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        diaSemana,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: isSelecionado ? Colors.white70 : Colors.grey.shade600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${dia.day}',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: isSelecionado ? Colors.white : Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: isSelecionado
+                                              ? Colors.white.withValues(alpha: 0.2)
+                                              : (qtd > 0 ? Colors.blue.shade50 : Colors.grey.shade100),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          '$qtd ag.',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: isSelecionado
+                                                ? Colors.white
+                                                : (qtd > 0 ? const Color(0xFF0D47A1) : Colors.grey.shade500),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Status do Dia Selecionado com Controle de Bloqueio
                         ValueListenableBuilder<Set<String>>(
                           valueListenable: store.diasBloqueados,
                           builder: (context, dias, child) {
@@ -162,7 +286,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                               decoration: BoxDecoration(
                                 color: ehDiaBloqueado ? Colors.red.shade50 : Colors.blue.shade50,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: ehDiaBloqueado ? Colors.red : Colors.blue),
+                                border: Border.all(color: ehDiaBloqueado ? Colors.red.shade200 : Colors.blue.shade200),
                               ),
                               child: Row(
                                 children: [
@@ -170,29 +294,32 @@ class _TelaAdminState extends State<TelaAdmin> {
                                     ehDiaBloqueado ? Icons.block : Icons.check_circle_outline,
                                     color: ehDiaBloqueado ? Colors.red : Colors.blue[800],
                                   ),
-                                  const SizedBox(width: 10),
+                                  const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
                                       ehDiaBloqueado
-                                          ? 'Status do Dia: DIA BLOQUEADO (Nenhum cliente pode agendar)'
-                                          : 'Status do Dia: Aberto para Agendamentos (Segunda a Sexta)',
+                                          ? 'Dia Bloqueado (Nenhum agendamento permitido)'
+                                          : 'Dia Aberto para Atendimentos (Segunda a Sexta)',
                                       style: TextStyle(
-                                        color: ehDiaBloqueado ? Colors.red : Colors.blue[900],
+                                        color: ehDiaBloqueado ? Colors.red.shade900 : Colors.blue.shade900,
                                         fontWeight: FontWeight.bold,
+                                        fontSize: 13,
                                       ),
                                     ),
                                   ),
                                   ElevatedButton(
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: ehDiaBloqueado ? Colors.green : Colors.red,
+                                      backgroundColor: ehDiaBloqueado ? Colors.green.shade700 : Colors.red.shade700,
                                       foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     ),
                                     onPressed: () {
                                       setState(() {
                                         store.toggleBloqueioDia(dataSelecionadaAdmin);
                                       });
                                     },
-                                    child: Text(ehDiaBloqueado ? 'Desbloquear Dia' : 'Bloquear Dia'),
+                                    child: Text(ehDiaBloqueado ? 'Desbloquear' : 'Bloquear Dia'),
                                   ),
                                 ],
                               ),
@@ -203,13 +330,13 @@ class _TelaAdminState extends State<TelaAdmin> {
                         const SizedBox(height: 16),
 
                         const Text(
-                          'Horários do Dia (Clique para Agendar para Cliente ou Bloquear/Desbloquear):',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          'Grade de Horários do Dia (Itens no passado ficam opacos):',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
                         ),
 
                         const SizedBox(height: 10),
 
-                        // Grid de Horários do Dia Selecionado
+                        // Grid de Horários do Dia Selecionado (Com opacidade se no passado)
                         ValueListenableBuilder<Set<String>>(
                           valueListenable: store.horariosBloqueados,
                           builder: (context, horarios, child) {
@@ -221,6 +348,8 @@ class _TelaAdminState extends State<TelaAdmin> {
                               runSpacing: 8,
                               children: AgendamentoStore.todosHorarios.map((horario) {
                                 final ehBloqueadoAdmin = store.isHorarioBloqueadoAdmin(dataSelecionadaAdmin, horario);
+                                final isPassadoHorario = store.isHorarioNoPassado(dataSelecionadaAdmin, horario);
+                                
                                 final agendamentoOcupado = lista.cast<Agendament?>().firstWhere(
                                       (i) =>
                                           i != null &&
@@ -235,24 +364,24 @@ class _TelaAdminState extends State<TelaAdmin> {
                                 IconData icone;
 
                                 if (ehDiaBloqueado || ehBloqueadoAdmin) {
-                                  corCard = Colors.red;
-                                  textoLabel = '$horario (Bloqueado)';
+                                  corCard = Colors.red.shade700;
+                                  textoLabel = '$horario (Bloq.)';
                                   icone = Icons.lock;
                                 } else if (agendamentoOcupado != null) {
-                                  corCard = Colors.blue[800]!;
+                                  corCard = Colors.blue.shade800;
                                   textoLabel = '$horario (${agendamentoOcupado.nome.split(" ").first})';
                                   icone = Icons.person;
                                 } else {
-                                  corCard = Colors.green[700]!;
+                                  corCard = Colors.green.shade700;
                                   textoLabel = '$horario (Livre)';
                                   icone = Icons.add_circle_outline;
                                 }
 
-                                return ActionChip(
-                                  avatar: Icon(icone, size: 16, color: Colors.white),
+                                Widget chip = ActionChip(
+                                  avatar: Icon(icone, size: 15, color: Colors.white),
                                   label: Text(
                                     textoLabel,
-                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                                   ),
                                   backgroundColor: corCard,
                                   onPressed: () {
@@ -264,6 +393,15 @@ class _TelaAdminState extends State<TelaAdmin> {
                                     );
                                   },
                                 );
+
+                                // Se o horário já passou, aplicamos opacidade reduzida
+                                if (isPassadoHorario) {
+                                  return Opacity(
+                                    opacity: 0.45,
+                                    child: chip,
+                                  );
+                                }
+                                return chip;
                               }).toList(),
                             );
                           },
@@ -273,24 +411,31 @@ class _TelaAdminState extends State<TelaAdmin> {
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-                // SEÇÃO 2: LISTA GERAL DE AGENDAMENTOS E BUSCA
-                Text(
-                  'Todos os Agendamentos',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF0D47A1),
+                // SEÇÃO 2: LISTA DE AGENDAMENTOS DO DIA (Com opacidade para os do passado)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      busca.isNotEmpty ? 'Resultados da Busca' : 'Agendamentos do Dia',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1)),
+                    ),
+                    if (busca.isEmpty)
+                      Text(
+                        '${listaFiltrada.length} encontrado(s)',
+                        style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600, fontSize: 13),
                       ),
+                  ],
                 ),
                 const SizedBox(height: 12),
 
-                // Campo de Busca
+                // Campo de Busca Global
                 TextField(
                   controller: buscaController,
                   decoration: InputDecoration(
-                    labelText: 'Buscar por nome, placa ou telefone',
-                    prefixIcon: const Icon(Icons.search),
+                    labelText: 'Pesquisar por nome, placa ou telefone...',
+                    prefixIcon: const Icon(Icons.search, color: Color(0xFF0D47A1)),
                     suffixIcon: busca.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear),
@@ -307,6 +452,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                     ),
                     filled: true,
                     fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                   ),
                   onChanged: (val) {
                     setState(() {
@@ -321,20 +467,14 @@ class _TelaAdminState extends State<TelaAdmin> {
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: [
-                      'Todos',
-                      'Confirmado',
-                      'Pendente',
-                      'Concluído',
-                      'Cancelado'
-                    ].map((status) {
+                    children: ['Todos', 'Confirmado', 'Pendente', 'Concluído', 'Cancelado'].map((status) {
                       final selected = filtroStatus == status;
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: FilterChip(
                           label: Text(status),
                           selected: selected,
-                          selectedColor: const Color(0xFF1565C0),
+                          selectedColor: const Color(0xFF0D47A1),
                           labelStyle: TextStyle(
                             color: selected ? Colors.white : Colors.black87,
                             fontWeight: selected ? FontWeight.bold : FontWeight.normal,
@@ -355,15 +495,17 @@ class _TelaAdminState extends State<TelaAdmin> {
                 // Lista de Agendamentos
                 if (listaFiltrada.isEmpty)
                   Container(
-                    padding: const EdgeInsets.all(32),
+                    padding: const EdgeInsets.all(40),
                     alignment: Alignment.center,
-                    child: const Column(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.inbox, size: 64, color: Colors.grey),
-                        SizedBox(height: 12),
+                        Icon(Icons.event_busy, size: 56, color: Colors.grey.shade400),
+                        const SizedBox(height: 12),
                         Text(
-                          'Nenhum agendamento encontrado.',
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                          busca.isNotEmpty ? 'Nenhum agendamento encontrado para a busca.' : 'Nenhum agendamento para este dia.',
+                          style: TextStyle(fontSize: 15, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
@@ -375,7 +517,18 @@ class _TelaAdminState extends State<TelaAdmin> {
                     itemCount: listaFiltrada.length,
                     itemBuilder: (context, index) {
                       final item = listaFiltrada[index];
-                      return _cardAgendamentoAdmin(item);
+                      final isPassado = store.isHorarioNoPassado(item.data, item.horario);
+
+                      Widget card = _cardAgendamentoAdmin(item, isPassado: isPassado);
+
+                      // Se o agendamento já passou, aplicamos opacidade reduzida (opaco)
+                      if (isPassado) {
+                        return Opacity(
+                          opacity: 0.5,
+                          child: card,
+                        );
+                      }
+                      return card;
                     },
                   ),
               ],
@@ -389,9 +542,10 @@ class _TelaAdminState extends State<TelaAdmin> {
   Widget _cardKPI(String titulo, String valor, IconData icone, Color cor) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -399,17 +553,17 @@ class _TelaAdminState extends State<TelaAdmin> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(icone, color: cor, size: 20),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Text(
                   titulo,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[700], fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
               valor,
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: cor),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: cor),
             ),
           ],
         ),
@@ -417,20 +571,20 @@ class _TelaAdminState extends State<TelaAdmin> {
     );
   }
 
-  Widget _cardAgendamentoAdmin(Agendament item) {
+  Widget _cardAgendamentoAdmin(Agendament item, {bool isPassado = false}) {
     Color corBadge;
     switch (item.status) {
       case 'Confirmado':
-        corBadge = Colors.green;
+        corBadge = Colors.green.shade700;
         break;
       case 'Concluído':
-        corBadge = Colors.blue;
+        corBadge = Colors.blue.shade700;
         break;
       case 'Cancelado':
-        corBadge = Colors.red;
+        corBadge = Colors.red.shade700;
         break;
       default:
-        corBadge = Colors.orange;
+        corBadge = Colors.orange.shade800;
     }
 
     final dataFormatada =
@@ -438,8 +592,12 @@ class _TelaAdminState extends State<TelaAdmin> {
 
     return Card(
       elevation: 2,
+      shadowColor: Colors.black12,
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: isPassado ? BorderSide(color: Colors.grey.shade300, width: 1) : BorderSide.none,
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -449,37 +607,55 @@ class _TelaAdminState extends State<TelaAdmin> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
-                    item.nome,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  child: Row(
+                    children: [
+                      Text(
+                        item.nome,
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                      ),
+                      if (isPassado) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'PASSADO',
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: corBadge.withValues(alpha: 0.15),
+                    color: corBadge.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: corBadge),
                   ),
                   child: Text(
                     item.status,
-                    style: TextStyle(color: corBadge, fontWeight: FontWeight.bold, fontSize: 12),
+                    style: TextStyle(color: corBadge, fontWeight: FontWeight.bold, fontSize: 11),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
 
             Row(
               children: [
-                const Icon(Icons.build_circle_outlined, size: 18, color: Colors.blueAccent),
+                const Icon(Icons.build_circle_outlined, size: 16, color: Color(0xFF0D47A1)),
                 const SizedBox(width: 6),
-                Text(item.servico, style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(item.servico, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                 const SizedBox(width: 16),
-                const Icon(Icons.directions_car, size: 18, color: Colors.grey),
+                const Icon(Icons.directions_car, size: 16, color: Colors.grey),
                 const SizedBox(width: 6),
-                Text(item.placa, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(item.placa, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               ],
             ),
 
@@ -487,36 +663,37 @@ class _TelaAdminState extends State<TelaAdmin> {
 
             Row(
               children: [
-                const Icon(Icons.phone, size: 18, color: Colors.grey),
+                const Icon(Icons.phone, size: 16, color: Colors.grey),
                 const SizedBox(width: 6),
-                Text('Tel: ${item.telefone}'),
+                Text('Tel: ${item.telefone}', style: const TextStyle(fontSize: 13)),
                 const SizedBox(width: 16),
-                const Icon(Icons.access_time, size: 18, color: Colors.grey),
+                const Icon(Icons.access_time, size: 16, color: Colors.grey),
                 const SizedBox(width: 6),
-                Text('$dataFormatada às ${item.horario}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text('$dataFormatada às ${item.horario}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               ],
             ),
 
-            const Divider(height: 24),
+            const Divider(height: 20),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.green.shade700,
+                    side: BorderSide(color: Colors.green.shade700),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   onPressed: () => _abrirWhatsAppCliente(item),
-                  icon: const Icon(Icons.chat, size: 18),
-                  label: const Text('WhatsApp'),
+                  icon: const Icon(Icons.chat, size: 16),
+                  label: const Text('WhatsApp', style: TextStyle(fontSize: 12)),
                 ),
 
                 Row(
                   children: [
                     PopupMenuButton<String>(
-                      icon: const Icon(Icons.edit_note, color: Color(0xFF1565C0)),
+                      icon: const Icon(Icons.edit_note, color: Color(0xFF0D47A1)),
                       tooltip: 'Alterar Status',
                       onSelected: (String novoStatus) {
                         store.alterarStatus(item.id, novoStatus);
@@ -536,13 +713,13 @@ class _TelaAdminState extends State<TelaAdmin> {
                     ),
 
                     IconButton(
-                      icon: const Icon(Icons.edit, color: Color(0xFF1565C0)),
+                      icon: const Icon(Icons.edit, color: Color(0xFF0D47A1), size: 20),
                       tooltip: 'Editar Agendamento',
                       onPressed: () => _abrirDialogEditarAgendamento(item),
                     ),
 
                     IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.redAccent),
+                      icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
                       tooltip: 'Excluir Agendamento',
                       onPressed: () => _confirmarExclusao(item),
                     ),
@@ -568,27 +745,32 @@ class _TelaAdminState extends State<TelaAdmin> {
       ),
       builder: (context) {
         return Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
                 'Horário: $horario em $dataFormatada',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1)),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
 
               if (agendamento != null) ...[
                 ListTile(
-                  leading: const Icon(Icons.person, color: Colors.blue),
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.blue.shade50,
+                    child: const Icon(Icons.person, color: Color(0xFF0D47A1)),
+                  ),
                   title: Text(agendamento.nome, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('Placa: ${agendamento.placa} | Tel: ${agendamento.telefone} | Status: ${agendamento.status}'),
+                  subtitle: Text('Placa: ${agendamento.placa} | Tel: ${agendamento.telefone}\nStatus: ${agendamento.status}'),
+                  isThreeLine: true,
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12)),
                   onPressed: () {
                     Navigator.pop(context);
                     _abrirWhatsAppCliente(agendamento);
@@ -598,7 +780,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12)),
                   onPressed: () {
                     store.remover(agendamento.id);
                     Navigator.pop(context);
@@ -626,7 +808,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                 const SizedBox(height: 12),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: ehBloqueado ? Colors.green : Colors.orange[800],
+                    backgroundColor: ehBloqueado ? Colors.green.shade700 : Colors.orange.shade800,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
@@ -668,14 +850,15 @@ class _TelaAdminState extends State<TelaAdmin> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return AlertDialog(
-              title: Text('Agendar para Cliente ($dataFormatada às $horario)'),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text('Agendar para Cliente\n($dataFormatada às $horario)', style: const TextStyle(fontSize: 16)),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     DropdownButtonFormField<String>(
-                      initialValue: servico,
-                      decoration: const InputDecoration(labelText: 'Serviço'),
+                      value: servico,
+                      decoration: const InputDecoration(labelText: 'Serviço', border: OutlineInputBorder()),
                       items: ['Troca de Placa', 'Instalação de Placa']
                           .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                           .toList(),
@@ -726,7 +909,7 @@ class _TelaAdminState extends State<TelaAdmin> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar'),
+                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D47A1)),
@@ -758,9 +941,7 @@ class _TelaAdminState extends State<TelaAdmin> {
 
                     if (store.isHorarioNoPassado(data, horario)) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text(
-                            'Não é permitido agendar em dias ou horários do passado!'),
-                            backgroundColor: Colors.red),
+                        const SnackBar(content: Text('Não é permitido agendar em dias ou horários do passado!'), backgroundColor: Colors.red),
                       );
                       return;
                     }
@@ -773,7 +954,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                       ..servico = servico
                       ..data = data
                       ..horario = horario
-                      ..status = 'Confirmado'; // Status sempre 'Confirmado' ao agendar
+                      ..status = 'Confirmado';
 
                     store.salvarOuAtualizar(agendamento);
                     Navigator.pop(context);
