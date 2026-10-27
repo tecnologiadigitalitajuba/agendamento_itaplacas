@@ -181,15 +181,6 @@ class TelaPrincipal extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 36),
-                            icon: const Icon(Icons.event_available, color: Color(0xFF0D47A1)),
-                            label: const Text('FAZER AGENDAMENTO'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 36),
 
                   // Nossos Serviços
                   const Text(
