@@ -36,7 +36,7 @@ class _TelaAdminState extends State<TelaAdmin> {
   int _getQtdAgendamentosNoDia(List<Agendament> lista, DateTime data) {
     final chave = AgendamentoStore.formatarChaveData(data);
     return lista.where((i) =>
-        AgendamentoStore.formatarChaveData(i.data) == chave &&
+    AgendamentoStore.formatarChaveData(i.data) == chave &&
         i.status != 'Cancelado').length;
   }
 
@@ -49,33 +49,43 @@ class _TelaAdminState extends State<TelaAdmin> {
   }
 
   Widget _buildCalendarioMensal(List<Agendament> lista) {
+    final hoje = DateTime.now();
     final primeiroDiaDoMes = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month, 1);
     final ultimoDiaDoMes = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month + 1, 0);
-    int primeiroDiaSemana = primeiroDiaDoMes.weekday; // 1 (Segunda) a 7 (Domingo)
+    int espacosVazios = primeiroDiaDoMes.weekday % 7; // Domingo = 0, Segunda = 1, ...
 
     List<Widget> diaWidgets = [];
 
-    // Cabeçalhos dos dias da semana
-    const diasSemana = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'];
+    // Cabeçalhos dos dias da semana (começando pelo Domingo)
+    const diasSemana = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
     for (var ds in diasSemana) {
+      final isFimDeSemanaHeader = ds == 'DOM' || ds == 'SÁB';
       diaWidgets.add(
         Center(
           child: Text(
             ds,
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+              color: isFimDeSemanaHeader ? Colors.grey.shade400 : Colors.blueGrey.shade600,
+            ),
           ),
         ),
       );
     }
 
     // Espaços vazios antes do primeiro dia do mês
-    for (int i = 1; i < primeiroDiaSemana; i++) {
+    for (int i = 0; i < espacosVazios; i++) {
       diaWidgets.add(const SizedBox.shrink());
     }
 
     // Dias do mês
     for (int dia = 1; dia <= ultimoDiaDoMes.day; dia++) {
       final dataAtual = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month, dia);
+      final isHoje = dataAtual.year == hoje.year &&
+          dataAtual.month == hoje.month &&
+          dataAtual.day == hoje.day;
       final isSelecionado = dataAtual.year == dataSelecionadaAdmin.year &&
           dataAtual.month == dataSelecionadaAdmin.month &&
           dataAtual.day == dataSelecionadaAdmin.day;
@@ -83,124 +93,230 @@ class _TelaAdminState extends State<TelaAdmin> {
       final isBloqueado = store.isDiaBloqueado(dataAtual);
       final qtd = _getQtdAgendamentosNoDia(lista, dataAtual);
 
+      Color bgColor;
+      Color textColor;
+      Border? border;
+      List<BoxShadow>? boxShadow;
+
+      if (isSelecionado) {
+        bgColor = const Color(0xFF0D47A1);
+        textColor = Colors.white;
+        border = Border.all(color: const Color(0xFF0D47A1), width: 1.5);
+        boxShadow = [
+          BoxShadow(
+            color: const Color(0xFF0D47A1).withValues(alpha: 0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ];
+      } else if (isFimDeSemana) {
+        bgColor = Colors.grey.shade100;
+        textColor = Colors.grey.shade400;
+        border = Border.all(color: Colors.transparent);
+      } else if (isBloqueado) {
+        bgColor = Colors.red.shade50;
+        textColor = Colors.red.shade700;
+        border = Border.all(color: Colors.red.shade200);
+      } else if (isHoje) {
+        bgColor = const Color(0xFFEBF3FE);
+        textColor = const Color(0xFF0D47A1);
+        border = Border.all(color: const Color(0xFF0D47A1), width: 1.5);
+      } else {
+        bgColor = Colors.white;
+        textColor = const Color(0xFF1E293B);
+        border = Border.all(color: Colors.grey.shade200);
+      }
+
       diaWidgets.add(
-        GestureDetector(
-          onTap: isFimDeSemana
-              ? null
-              : () {
-                  setState(() {
-                    dataSelecionadaAdmin = dataAtual;
-                  });
-                },
-          child: Container(
-            decoration: BoxDecoration(
-              color: isSelecionado
-                  ? const Color(0xFF0D47A1)
-                  : (isFimDeSemana ? Colors.grey.shade100 : (isBloqueado ? Colors.red.shade50 : Colors.white)),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isSelecionado ? const Color(0xFF0D47A1) : Colors.grey.shade300,
-                width: isSelecionado ? 1.5 : 1,
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: isFimDeSemana
+                ? null
+                : () {
+              setState(() {
+                dataSelecionadaAdmin = dataAtual;
+              });
+            },
+            borderRadius: BorderRadius.circular(10),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(10),
+                border: border,
+                boxShadow: boxShadow,
               ),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '$dia',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: isSelecionado
-                        ? Colors.white
-                        : (isFimDeSemana ? Colors.grey.shade400 : (isBloqueado ? Colors.red.shade700 : Colors.black87)),
-                  ),
-                ),
-                const SizedBox(height: 1),
-                if (!isFimDeSemana) ...[
-                  if (qtd > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0.5),
-                      decoration: BoxDecoration(
-                        color: isSelecionado ? Colors.white : const Color(0xFF0D47A1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '$qtd',
+              padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '$dia',
                         style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: isSelecionado ? const Color(0xFF0D47A1) : Colors.white,
+                          fontSize: 12,
+                          fontWeight: isSelecionado || isHoje ? FontWeight.bold : FontWeight.w600,
+                          color: textColor,
                         ),
                       ),
-                    )
-                  else
-                    Text(
-                      isBloqueado ? 'Bloq' : '-',
-                      style: TextStyle(
-                        fontSize: 8,
-                        color: isBloqueado ? Colors.red.shade400 : Colors.grey.shade400,
+                      if (isHoje && !isSelecionado) ...[
+                        const SizedBox(width: 2),
+                        Container(
+                          width: 4,
+                          height: 4,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF0D47A1),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 1),
+                  if (!isFimDeSemana) ...[
+                    if (qtd > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: isSelecionado ? Colors.white : const Color(0xFF0D47A1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '$qtd',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: isSelecionado ? const Color(0xFF0D47A1) : Colors.white,
+                          ),
+                        ),
+                      )
+                    else if (isBloqueado)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 0.5),
+                        decoration: BoxDecoration(
+                          color: isSelecionado ? Colors.white24 : Colors.red.shade100,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Bloq',
+                          style: TextStyle(
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                            color: isSelecionado ? Colors.white : Colors.red.shade800,
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        width: 3,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: isSelecionado ? Colors.white38 : Colors.grey.shade300,
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
       );
     }
 
-    return Column(
-      children: [
-        // Navegação do Mês Compacta
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final isCurrentMonth = dataSelecionadaAdmin.year == hoje.year && dataSelecionadaAdmin.month == hoje.month;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Column(
           children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left, size: 20, color: Color(0xFF0D47A1)),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              onPressed: () {
-                setState(() {
-                  dataSelecionadaAdmin = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month - 1, 1);
-                  while (!store.isDiaUtil(dataSelecionadaAdmin) && dataSelecionadaAdmin.day < 28) {
-                    dataSelecionadaAdmin = dataSelecionadaAdmin.add(const Duration(days: 1));
-                  }
-                });
-              },
+            // Navegação do Mês Compacta e Moderna
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left_rounded, size: 22, color: Color(0xFF0D47A1)),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        splashRadius: 18,
+                        onPressed: () {
+                          setState(() {
+                            dataSelecionadaAdmin = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month - 1, 1);
+                            while (!store.isDiaUtil(dataSelecionadaAdmin) && dataSelecionadaAdmin.day < 28) {
+                              dataSelecionadaAdmin = dataSelecionadaAdmin.add(const Duration(days: 1));
+                            }
+                          });
+                        },
+                      ),
+                      Text(
+                        _formatarMesAno(dataSelecionadaAdmin),
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1)),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right_rounded, size: 22, color: Color(0xFF0D47A1)),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        splashRadius: 18,
+                        onPressed: () {
+                          setState(() {
+                            dataSelecionadaAdmin = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month + 1, 1);
+                            while (!store.isDiaUtil(dataSelecionadaAdmin) && dataSelecionadaAdmin.day < 28) {
+                              dataSelecionadaAdmin = dataSelecionadaAdmin.add(const Duration(days: 1));
+                            }
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  if (!isCurrentMonth)
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        foregroundColor: const Color(0xFF0D47A1),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          var h = DateTime.now();
+                          while (!store.isDiaUtil(h)) {
+                            h = h.add(const Duration(days: 1));
+                          }
+                          dataSelecionadaAdmin = h;
+                        });
+                      },
+                      icon: const Icon(Icons.today, size: 14),
+                      label: const Text('Hoje', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    ),
+                ],
+              ),
             ),
-            Text(
-              _formatarMesAno(dataSelecionadaAdmin),
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1)),
-            ),
-            IconButton(
-              icon: const Icon(Icons.chevron_right, size: 20, color: Color(0xFF0D47A1)),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              onPressed: () {
-                setState(() {
-                  dataSelecionadaAdmin = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month + 1, 1);
-                  while (!store.isDiaUtil(dataSelecionadaAdmin) && dataSelecionadaAdmin.day < 28) {
-                    dataSelecionadaAdmin = dataSelecionadaAdmin.add(const Duration(days: 1));
-                  }
-                });
-              },
+            const SizedBox(height: 8),
+            // Grid do Calendário Compacto
+            GridView.count(
+              crossAxisCount: 7,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 4,
+              mainAxisSpacing: 4,
+              childAspectRatio: 0.98,
+              children: diaWidgets,
             ),
           ],
         ),
-        const SizedBox(height: 6),
-        // Grid do Calendário Compacto
-        GridView.count(
-          crossAxisCount: 7,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 4,
-          mainAxisSpacing: 4,
-          childAspectRatio: 1.35,
-          children: diaWidgets,
-        ),
-      ],
+      ),
     );
   }
 
@@ -226,7 +342,7 @@ class _TelaAdminState extends State<TelaAdmin> {
           final hoje = DateTime.now();
           final totalAgendamentos = lista.length;
           final agendamentosHoje = lista.where((item) =>
-              item.data.year == hoje.year &&
+          item.data.year == hoje.year &&
               item.data.month == hoje.month &&
               item.data.day == hoje.day &&
               item.status != 'Cancelado').length;
@@ -242,7 +358,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                 item.nome.toLowerCase().contains(buscaLower) ||
                 item.placa.toLowerCase().contains(buscaLower) ||
                 item.telefone.toLowerCase().contains(buscaLower);
-            
+
             if (busca.isNotEmpty) {
               return atendeFiltroStatus && atendeBusca;
             }
@@ -262,9 +378,10 @@ class _TelaAdminState extends State<TelaAdmin> {
                       crossAxisCount: isMobile ? 2 : 4,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: isMobile ? 1.8 : 2.4,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      // Cards mais baixos no desktop e proporcionais no celular.
+                      childAspectRatio: isMobile ? 2.25 : 4.1,
                       children: [
                         _cardKPI('Total', '$totalAgendamentos', Icons.format_list_bulleted, Colors.blue.shade700),
                         _cardKPI('Hoje', '$agendamentosHoje', Icons.today, Colors.purple.shade700),
@@ -277,14 +394,15 @@ class _TelaAdminState extends State<TelaAdmin> {
 
                 const SizedBox(height: 16),
 
-                // SEÇÃO 1: CALENDÁRIO MENSAL COMPACTO E PADRÃO
-                Card(
-                  elevation: 2,
-                  shadowColor: Colors.black12,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
+                // LAYOUT ADAPTATIVO: 3 Colunas no PC, 2 em Tablet, 1 em Celular
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth;
+                    final isPC = width >= 950;
+                    final isTablet = width >= 600 && width < 950;
+
+                    // COLUNA 1: CALENDÁRIO
+                    final colunaCalendario = Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Row(
@@ -292,35 +410,34 @@ class _TelaAdminState extends State<TelaAdmin> {
                           children: [
                             const Row(
                               children: [
-                                Icon(Icons.calendar_month, color: Color(0xFF0D47A1), size: 20),
-                                SizedBox(width: 8),
+                                Icon(Icons.calendar_month, color: Color(0xFF0D47A1), size: 18),
+                                SizedBox(width: 6),
                                 Text(
-                                  'Calendário & Vagas',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1)),
+                                  'Calendário',
+                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1)),
                                 ),
                               ],
                             ),
                             Text(
-                              'Data: ${dataSelecionadaAdmin.day.toString().padLeft(2, '0')}/${dataSelecionadaAdmin.month.toString().padLeft(2, '0')}/${dataSelecionadaAdmin.year}',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey),
+                              '${dataSelecionadaAdmin.day.toString().padLeft(2, '0')}/${dataSelecionadaAdmin.month.toString().padLeft(2, '0')}/${dataSelecionadaAdmin.year}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.grey),
                             ),
                           ],
                         ),
+                        const SizedBox(height: 8),
+
+                        // Calendário Mensal
+                        _buildCalendarioMensal(lista),
 
                         const SizedBox(height: 10),
 
-                        // Calendário Compacto
-                        _buildCalendarioMensal(lista),
-
-                        const SizedBox(height: 14),
-
-                        // Status do Dia Selecionado com Controle de Bloqueio
+                        // Controle de Bloqueio do Dia
                         ValueListenableBuilder<Set<String>>(
                           valueListenable: store.diasBloqueados,
                           builder: (context, dias, child) {
                             final ehDiaBloqueado = store.isDiaBloqueado(dataSelecionadaAdmin);
                             return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                               decoration: BoxDecoration(
                                 color: ehDiaBloqueado ? Colors.red.shade50 : Colors.blue.shade50,
                                 borderRadius: BorderRadius.circular(10),
@@ -331,27 +448,27 @@ class _TelaAdminState extends State<TelaAdmin> {
                                   Icon(
                                     ehDiaBloqueado ? Icons.block : Icons.check_circle_outline,
                                     color: ehDiaBloqueado ? Colors.red : Colors.blue[800],
-                                    size: 18,
+                                    size: 16,
                                   ),
-                                  const SizedBox(width: 10),
+                                  const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       ehDiaBloqueado ? 'Dia Bloqueado' : 'Dia Aberto (Seg-Sex)',
                                       style: TextStyle(
                                         color: ehDiaBloqueado ? Colors.red.shade900 : Colors.blue.shade900,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 12,
+                                        fontSize: 11,
                                       ),
                                     ),
                                   ),
                                   SizedBox(
-                                    height: 32,
+                                    height: 28,
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: ehDiaBloqueado ? Colors.green.shade700 : Colors.red.shade700,
                                         foregroundColor: Colors.white,
                                         elevation: 0,
-                                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                                       ),
                                       onPressed: () {
@@ -359,7 +476,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                                           store.toggleBloqueioDia(dataSelecionadaAdmin);
                                         });
                                       },
-                                      child: Text(ehDiaBloqueado ? 'Desbloquear' : 'Bloquear', style: const TextStyle(fontSize: 11)),
+                                      child: Text(ehDiaBloqueado ? 'Desbloquear' : 'Bloquear', style: const TextStyle(fontSize: 10.5)),
                                     ),
                                   ),
                                 ],
@@ -367,17 +484,25 @@ class _TelaAdminState extends State<TelaAdmin> {
                             );
                           },
                         ),
+                      ],
+                    );
 
-                        const SizedBox(height: 12),
-
-                        const Text(
-                          'Horários do Dia (Passados ficam opacos):',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87),
+                    // COLUNA 2: HORÁRIOS
+                    final colunaHorarios = Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.access_time_filled, color: Color(0xFF0D47A1), size: 18),
+                            SizedBox(width: 6),
+                            Text(
+                              'Horários do Dia',
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1)),
+                            ),
+                          ],
                         ),
-
                         const SizedBox(height: 8),
 
-                        // Grid de Horários do Dia Selecionado
                         ValueListenableBuilder<Set<String>>(
                           valueListenable: store.horariosBloqueados,
                           builder: (context, horarios, child) {
@@ -390,15 +515,15 @@ class _TelaAdminState extends State<TelaAdmin> {
                               children: AgendamentoStore.todosHorarios.map((horario) {
                                 final ehBloqueadoAdmin = store.isHorarioBloqueadoAdmin(dataSelecionadaAdmin, horario);
                                 final isPassadoHorario = store.isHorarioNoPassado(dataSelecionadaAdmin, horario);
-                                
+
                                 final agendamentoOcupado = lista.cast<Agendament?>().firstWhere(
                                       (i) =>
-                                          i != null &&
-                                          AgendamentoStore.formatarChaveData(i.data) == chaveData &&
-                                          i.horario == horario &&
-                                          i.status != 'Cancelado',
-                                      orElse: () => null,
-                                    );
+                                  i != null &&
+                                      AgendamentoStore.formatarChaveData(i.data) == chaveData &&
+                                      i.horario == horario &&
+                                      i.status != 'Cancelado',
+                                  orElse: () => null,
+                                );
 
                                 Color corCard;
                                 String textoLabel;
@@ -419,10 +544,10 @@ class _TelaAdminState extends State<TelaAdmin> {
                                 }
 
                                 Widget chip = ActionChip(
-                                  avatar: Icon(icone, size: 14, color: Colors.white),
+                                  avatar: Icon(icone, size: 13, color: Colors.white),
                                   label: Text(
                                     textoLabel,
-                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10.5),
                                   ),
                                   backgroundColor: corCard,
                                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
@@ -448,129 +573,253 @@ class _TelaAdminState extends State<TelaAdmin> {
                           },
                         ),
                       ],
-                    ),
-                  ),
-                ),
+                    );
 
-                const SizedBox(height: 20),
+                    // COLUNA 3: AGENDAMENTOS
+                    final colunaAgendamentos = Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.list_alt, color: Color(0xFF0D47A1), size: 18),
+                                const SizedBox(width: 6),
+                                Text(
+                                  busca.isNotEmpty ? 'Resultados' : 'Agendamentos',
+                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1)),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              '${listaFiltrada.length} encontrado(s)',
+                              style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
 
-                // SEÇÃO 2: LISTA DE AGENDAMENTOS DO DIA
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      busca.isNotEmpty ? 'Resultados da Busca' : 'Agendamentos do Dia',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1)),
-                    ),
-                    if (busca.isEmpty)
-                      Text(
-                        '${listaFiltrada.length} encontrado(s)',
-                        style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600, fontSize: 12),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                // Campo de Busca Global
-                TextField(
-                  controller: buscaController,
-                  decoration: InputDecoration(
-                    labelText: 'Pesquisar por nome, placa ou telefone...',
-                    prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF0D47A1)),
-                    suffixIcon: busca.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () {
-                              setState(() {
-                                buscaController.clear();
-                                busca = '';
-                              });
-                            },
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-                  ),
-                  onChanged: (val) {
-                    setState(() {
-                      busca = val;
-                    });
-                  },
-                ),
-
-                const SizedBox(height: 10),
-
-                // Chips de Filtro por Status
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: ['Todos', 'Confirmado', 'Pendente', 'Concluído', 'Cancelado'].map((status) {
-                      final selected = filtroStatus == status;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: FilterChip(
-                          label: Text(status, style: const TextStyle(fontSize: 12)),
-                          selected: selected,
-                          selectedColor: const Color(0xFF0D47A1),
-                          labelStyle: TextStyle(
-                            color: selected ? Colors.white : Colors.black87,
-                            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                        // Campo de Busca
+                        TextField(
+                          controller: buscaController,
+                          decoration: InputDecoration(
+                            labelText: 'Pesquisar...',
+                            prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF0D47A1)),
+                            suffixIcon: busca.isNotEmpty
+                                ? IconButton(
+                              icon: const Icon(Icons.clear, size: 16),
+                              onPressed: () {
+                                setState(() {
+                                  buscaController.clear();
+                                  busca = '';
+                                });
+                              },
+                            )
+                                : null,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                           ),
-                          onSelected: (bool val) {
+                          onChanged: (val) {
                             setState(() {
-                              filtroStatus = status;
+                              busca = val;
                             });
                           },
                         ),
-                      );
-                    }).toList(),
-                  ),
-                ),
 
-                const SizedBox(height: 14),
+                        const SizedBox(height: 8),
 
-                // Lista de Agendamentos
-                if (listaFiltrada.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(30),
-                    alignment: Alignment.center,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.event_busy, size: 48, color: Colors.grey.shade400),
-                        const SizedBox(height: 10),
-                        Text(
-                          busca.isNotEmpty ? 'Nenhum agendamento encontrado para a busca.' : 'Nenhum agendamento para este dia.',
-                          style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
-                          textAlign: TextAlign.center,
+                        // Chips de Filtro por Status
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: ['Todos', 'Confirmado', 'Pendente', 'Concluído', 'Cancelado'].map((status) {
+                              final selected = filtroStatus == status;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 4),
+                                child: FilterChip(
+                                  label: Text(status, style: const TextStyle(fontSize: 10.5)),
+                                  selected: selected,
+                                  selectedColor: const Color(0xFF0D47A1),
+                                  labelStyle: TextStyle(
+                                    color: selected ? Colors.white : Colors.black87,
+                                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                  onSelected: (bool val) {
+                                    setState(() {
+                                      filtroStatus = status;
+                                    });
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          ),
                         ),
+
+                        const SizedBox(height: 10),
+
+                        // Lista de Agendamentos
+                        if (listaFiltrada.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            alignment: Alignment.center,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.event_busy, size: 36, color: Colors.grey.shade400),
+                                const SizedBox(height: 6),
+                                Text(
+                                  busca.isNotEmpty ? 'Nenhum agendamento encontrado.' : 'Nenhum agendamento para este dia.',
+                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: listaFiltrada.length,
+                            itemBuilder: (context, index) {
+                              final item = listaFiltrada[index];
+                              final isPassado = store.isHorarioNoPassado(item.data, item.horario);
+
+                              Widget card = _cardAgendamentoAdmin(item, isPassado: isPassado);
+
+                              if (isPassado) {
+                                return Opacity(
+                                  opacity: 0.5,
+                                  child: card,
+                                );
+                              }
+                              return card;
+                            },
+                          ),
                       ],
-                    ),
-                  )
-                else
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: listaFiltrada.length,
-                    itemBuilder: (context, index) {
-                      final item = listaFiltrada[index];
-                      final isPassado = store.isHorarioNoPassado(item.data, item.horario);
+                    );
 
-                      Widget card = _cardAgendamentoAdmin(item, isPassado: isPassado);
-
-                      if (isPassado) {
-                        return Opacity(
-                          opacity: 0.5,
-                          child: card,
-                        );
-                      }
-                      return card;
-                    },
-                  ),
+                    if (isPC) {
+                      // 3 Colunas no PC (Calendário | Horários | Agendamentos)
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: Card(
+                              elevation: 2,
+                              shadowColor: Colors.black12,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: colunaCalendario,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 3,
+                            child: Card(
+                              elevation: 2,
+                              shadowColor: Colors.black12,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: colunaHorarios,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 4,
+                            child: Card(
+                              elevation: 2,
+                              shadowColor: Colors.black12,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: colunaAgendamentos,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    } else if (isTablet) {
+                      // 2 Colunas no Tablet (Calendário + Horários na parte superior, Agendamentos na inferior)
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Card(
+                            elevation: 2,
+                            shadowColor: Colors.black12,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(flex: 5, child: colunaCalendario),
+                                  const SizedBox(width: 16),
+                                  Expanded(flex: 6, child: colunaHorarios),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Card(
+                            elevation: 2,
+                            shadowColor: Colors.black12,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: colunaAgendamentos,
+                            ),
+                          ),
+                        ],
+                      );
+                    } else {
+                      // Mobile: Tudo Empilhado
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Card(
+                            elevation: 2,
+                            shadowColor: Colors.black12,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: colunaCalendario,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Card(
+                            elevation: 2,
+                            shadowColor: Colors.black12,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: colunaHorarios,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Card(
+                            elevation: 2,
+                            shadowColor: Colors.black12,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: colunaAgendamentos,
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                  },
+                ),
               ],
             ),
           );
@@ -581,29 +830,49 @@ class _TelaAdminState extends State<TelaAdmin> {
 
   Widget _cardKPI(String titulo, String valor, IconData icone, Color cor) {
     return Card(
-      elevation: 2,
+      margin: EdgeInsets.zero,
+      elevation: 1,
       shadowColor: Colors.black12,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: cor.withValues(alpha: 0.12)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icone, color: cor, size: 18),
-                const SizedBox(width: 6),
-                Text(
-                  titulo,
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700, fontWeight: FontWeight.bold),
-                ),
-              ],
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: cor.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icone, color: cor, size: 19),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                titulo,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
             Text(
               valor,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: cor),
+              style: TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.w800,
+                color: cor,
+                height: 1,
+              ),
             ),
           ],
         ),
@@ -1029,7 +1298,7 @@ class _TelaAdminState extends State<TelaAdmin> {
         '${item.data.day.toString().padLeft(2, '0')}/${item.data.month.toString().padLeft(2, '0')}/${item.data.year}';
     final mensagem = Uri.encodeComponent(
       'Olá ${item.nome}! Aqui é da ITAPLACAS. '
-      'Referente ao seu agendamento de ${item.servico} para o dia $dataFormatada às ${item.horario} (Placa: ${item.placa}).',
+          'Referente ao seu agendamento de ${item.servico} para o dia $dataFormatada às ${item.horario} (Placa: ${item.placa}).',
     );
     final Uri uri = Uri.parse('https://wa.me/55$telApenasNumeros?text=$mensagem');
 
