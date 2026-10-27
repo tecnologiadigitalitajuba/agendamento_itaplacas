@@ -33,25 +33,174 @@ class _TelaAdminState extends State<TelaAdmin> {
     super.dispose();
   }
 
-  List<DateTime> _getDiasProximos() {
-    final List<DateTime> dias = [];
-    DateTime cursor = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-    int added = 0;
-    while (added < 15) {
-      if (store.isDiaUtil(cursor)) {
-        dias.add(cursor);
-        added++;
-      }
-      cursor = cursor.add(const Duration(days: 1));
-    }
-    return dias;
-  }
-
   int _getQtdAgendamentosNoDia(List<Agendament> lista, DateTime data) {
     final chave = AgendamentoStore.formatarChaveData(data);
     return lista.where((i) =>
         AgendamentoStore.formatarChaveData(i.data) == chave &&
         i.status != 'Cancelado').length;
+  }
+
+  String _formatarMesAno(DateTime data) {
+    const meses = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    return '${meses[data.month - 1]} de ${data.year}';
+  }
+
+  Widget _buildCalendarioMensal(List<Agendament> lista) {
+    final primeiroDiaDoMes = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month, 1);
+    final ultimoDiaDoMes = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month + 1, 0);
+    int primeiroDiaSemana = primeiroDiaDoMes.weekday; // 1 (Segunda) a 7 (Domingo)
+
+    List<Widget> diaWidgets = [];
+
+    // Cabeçalhos dos dias da semana
+    const diasSemana = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'];
+    for (var ds in diasSemana) {
+      diaWidgets.add(
+        Center(
+          child: Text(
+            ds,
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
+          ),
+        ),
+      );
+    }
+
+    // Espaços vazios antes do primeiro dia do mês
+    for (int i = 1; i < primeiroDiaSemana; i++) {
+      diaWidgets.add(const SizedBox.shrink());
+    }
+
+    // Dias do mês
+    for (int dia = 1; dia <= ultimoDiaDoMes.day; dia++) {
+      final dataAtual = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month, dia);
+      final isSelecionado = dataAtual.year == dataSelecionadaAdmin.year &&
+          dataAtual.month == dataSelecionadaAdmin.month &&
+          dataAtual.day == dataSelecionadaAdmin.day;
+      final isFimDeSemana = dataAtual.weekday == DateTime.saturday || dataAtual.weekday == DateTime.sunday;
+      final isBloqueado = store.isDiaBloqueado(dataAtual);
+      final qtd = _getQtdAgendamentosNoDia(lista, dataAtual);
+
+      diaWidgets.add(
+        GestureDetector(
+          onTap: isFimDeSemana
+              ? null
+              : () {
+                  setState(() {
+                    dataSelecionadaAdmin = dataAtual;
+                  });
+                },
+          child: Container(
+            decoration: BoxDecoration(
+              color: isSelecionado
+                  ? const Color(0xFF0D47A1)
+                  : (isFimDeSemana ? Colors.grey.shade100 : (isBloqueado ? Colors.red.shade50 : Colors.white)),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isSelecionado ? const Color(0xFF0D47A1) : Colors.grey.shade300,
+                width: isSelecionado ? 2 : 1,
+              ),
+              boxShadow: isSelecionado
+                  ? [BoxShadow(color: const Color(0xFF0D47A1).withValues(alpha: 0.3), blurRadius: 6, offset: const Offset(0, 3))]
+                  : [],
+            ),
+            padding: const EdgeInsets.all(4),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '$dia',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isSelecionado
+                        ? Colors.white
+                        : (isFimDeSemana ? Colors.grey.shade400 : (isBloqueado ? Colors.red.shade700 : Colors.black87)),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                if (!isFimDeSemana) ...[
+                  if (qtd > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: isSelecionado ? Colors.white : const Color(0xFF0D47A1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '$qtd',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: isSelecionado ? const Color(0xFF0D47A1) : Colors.white,
+                        ),
+                      ),
+                    )
+                  else
+                    Text(
+                      isBloqueado ? 'Bloq.' : '-',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: isBloqueado ? Colors.red.shade400 : Colors.grey.shade400,
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        // Navegação do Mês
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left, color: Color(0xFF0D47A1)),
+              onPressed: () {
+                setState(() {
+                  dataSelecionadaAdmin = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month - 1, 1);
+                  while (!store.isDiaUtil(dataSelecionadaAdmin) && dataSelecionadaAdmin.day < 28) {
+                    dataSelecionadaAdmin = dataSelecionadaAdmin.add(const Duration(days: 1));
+                  }
+                });
+              },
+            ),
+            Text(
+              _formatarMesAno(dataSelecionadaAdmin),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1)),
+            ),
+            IconButton(
+              icon: const Icon(Icons.chevron_right, color: Color(0xFF0D47A1)),
+              onPressed: () {
+                setState(() {
+                  dataSelecionadaAdmin = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month + 1, 1);
+                  while (!store.isDiaUtil(dataSelecionadaAdmin) && dataSelecionadaAdmin.day < 28) {
+                    dataSelecionadaAdmin = dataSelecionadaAdmin.add(const Duration(days: 1));
+                  }
+                });
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Grid do Calendário
+        GridView.count(
+          crossAxisCount: 7,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 6,
+          mainAxisSpacing: 6,
+          childAspectRatio: 1.15,
+          children: diaWidgets,
+        ),
+      ],
+    );
   }
 
   @override
@@ -83,7 +232,6 @@ class _TelaAdminState extends State<TelaAdmin> {
           final pendentes = lista.where((item) => item.status == 'Pendente').length;
           final confirmados = lista.where((item) => item.status == 'Confirmado').length;
 
-          // Filtrar agendamentos do dia selecionado ou busca geral
           final chaveDataSelecionada = AgendamentoStore.formatarChaveData(dataSelecionadaAdmin);
           final listaFiltrada = lista.where((item) {
             final atendeData = AgendamentoStore.formatarChaveData(item.data) == chaveDataSelecionada;
@@ -94,7 +242,6 @@ class _TelaAdminState extends State<TelaAdmin> {
                 item.placa.toLowerCase().contains(buscaLower) ||
                 item.telefone.toLowerCase().contains(buscaLower);
             
-            // Se houver texto na busca, busca em todos os dias; senão, filtra pelo dia selecionado
             if (busca.isNotEmpty) {
               return atendeFiltroStatus && atendeBusca;
             }
@@ -129,7 +276,7 @@ class _TelaAdminState extends State<TelaAdmin> {
 
                 const SizedBox(height: 24),
 
-                // SEÇÃO 1: CALENDÁRIO COM QUANTIDADES DE AGENDAMENTOS POR DIA
+                // SEÇÃO 1: CALENDÁRIO MENSAL NORMAL COM QUANTIDADES DE AGENDAMENTOS
                 Card(
                   elevation: 2,
                   shadowColor: Colors.black12,
@@ -147,134 +294,24 @@ class _TelaAdminState extends State<TelaAdmin> {
                                 Icon(Icons.calendar_month, color: Color(0xFF0D47A1), size: 22),
                                 SizedBox(width: 10),
                                 Text(
-                                  'Agenda Diária & Contagem',
+                                  'Calendário & Contagem de Vagas',
                                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1)),
                                 ),
                               ],
                             ),
-                            OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF0D47A1),
-                                side: const BorderSide(color: Color(0xFF0D47A1)),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              onPressed: () async {
-                                final DateTime? selected = await showDatePicker(
-                                  context: context,
-                                  initialDate: dataSelecionadaAdmin,
-                                  firstDate: DateTime.now().subtract(const Duration(days: 60)),
-                                  lastDate: DateTime.now().add(const Duration(days: 180)),
-                                  selectableDayPredicate: (day) => store.isDiaUtil(day),
-                                  builder: (context, child) {
-                                    return Theme(
-                                      data: ThemeData.light().copyWith(
-                                        colorScheme: const ColorScheme.light(primary: Color(0xFF0D47A1)),
-                                      ),
-                                      child: child!,
-                                    );
-                                  },
-                                );
-                                if (selected != null) {
-                                  setState(() {
-                                    dataSelecionadaAdmin = selected;
-                                  });
-                                }
-                              },
-                              icon: const Icon(Icons.date_range, size: 18),
-                              label: Text(
-                                '${dataSelecionadaAdmin.day.toString().padLeft(2, '0')}/'
-                                '${dataSelecionadaAdmin.month.toString().padLeft(2, '0')}/'
-                                '${dataSelecionadaAdmin.year}',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
+                            Text(
+                              'Data selecionada: ${dataSelecionadaAdmin.day.toString().padLeft(2, '0')}/${dataSelecionadaAdmin.month.toString().padLeft(2, '0')}/${dataSelecionadaAdmin.year}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey),
                             ),
                           ],
                         ),
 
                         const SizedBox(height: 16),
 
-                        // Barra Horizontal de Dias com Contagem de Agendamentos
-                        SizedBox(
-                          height: 85,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _getDiasProximos().length,
-                            itemBuilder: (context, index) {
-                              final dia = _getDiasProximos()[index];
-                              final isSelecionado = AgendamentoStore.formatarChaveData(dia) ==
-                                  AgendamentoStore.formatarChaveData(dataSelecionadaAdmin);
-                              final qtd = _getQtdAgendamentosNoDia(lista, dia);
-                              final diaSemana = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'][dia.weekday % 7];
+                        // Exibir Calendário Mensal Normal
+                        _buildCalendarioMensal(lista),
 
-                              return GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    dataSelecionadaAdmin = dia;
-                                  });
-                                },
-                                child: Container(
-                                  width: 70,
-                                  margin: const EdgeInsets.only(right: 10),
-                                  decoration: BoxDecoration(
-                                    color: isSelecionado ? const Color(0xFF0D47A1) : Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: isSelecionado ? const Color(0xFF0D47A1) : Colors.grey.shade300,
-                                      width: isSelecionado ? 2 : 1,
-                                    ),
-                                    boxShadow: isSelecionado
-                                        ? [BoxShadow(color: const Color(0xFF0D47A1).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))]
-                                        : [],
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        diaSemana,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: isSelecionado ? Colors.white70 : Colors.grey.shade600,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${dia.day}',
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: isSelecionado ? Colors.white : Colors.black87,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: isSelecionado
-                                              ? Colors.white.withValues(alpha: 0.2)
-                                              : (qtd > 0 ? Colors.blue.shade50 : Colors.grey.shade100),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Text(
-                                          '$qtd ag.',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: isSelecionado
-                                                ? Colors.white
-                                                : (qtd > 0 ? const Color(0xFF0D47A1) : Colors.grey.shade500),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
 
                         // Status do Dia Selecionado com Controle de Bloqueio
                         ValueListenableBuilder<Set<String>>(
@@ -394,7 +431,6 @@ class _TelaAdminState extends State<TelaAdmin> {
                                   },
                                 );
 
-                                // Se o horário já passou, aplicamos opacidade reduzida
                                 if (isPassadoHorario) {
                                   return Opacity(
                                     opacity: 0.45,
@@ -413,7 +449,7 @@ class _TelaAdminState extends State<TelaAdmin> {
 
                 const SizedBox(height: 24),
 
-                // SEÇÃO 2: LISTA DE AGENDAMENTOS DO DIA (Com opacidade para os do passado)
+                // SEÇÃO 2: LISTA DE AGENDAMENTOS DO DIA
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -521,7 +557,6 @@ class _TelaAdminState extends State<TelaAdmin> {
 
                       Widget card = _cardAgendamentoAdmin(item, isPassado: isPassado);
 
-                      // Se o agendamento já passou, aplicamos opacidade reduzida (opaco)
                       if (isPassado) {
                         return Opacity(
                           opacity: 0.5,
