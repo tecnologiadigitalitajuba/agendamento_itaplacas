@@ -23,6 +23,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
   final placaController = TextEditingController();
   final telefoneController = TextEditingController();
   String _userId = '';
+  Agendament? _agendamentoEmEdicao;
 
   @override
   void initState() {
@@ -400,13 +401,18 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
       );
     }
 
-    // Lista de Meus Agendamentos (Restrita estritamente ao ID único do usuário)
+    // Lista de Meus Agendamentos
     Widget buildMeusAgendamentos() {
       return ValueListenableBuilder<List<Agendament>>(
         valueListenable: store,
         builder: (context, lista, child) {
+          final telInformado = telefoneController.text.trim().replaceAll(RegExp(r'\D'), '');
+
           final meusAgendamentos = lista.where((item) {
-            return _userId.isNotEmpty && item.userId == _userId;
+            bool matchUser = _userId.isNotEmpty && item.userId == _userId;
+            bool matchEditingUser = _agendamentoEmEdicao != null && item.userId == _agendamentoEmEdicao!.userId;
+            bool matchTel = telInformado.isNotEmpty && item.telefone.replaceAll(RegExp(r'\D'), '') == telInformado;
+            return matchUser || matchEditingUser || matchTel;
           }).toList();
 
           if (meusAgendamentos.isEmpty) return const SizedBox.shrink();
@@ -903,6 +909,10 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
       return;
     }
 
+    final userIdParaSalvar = _agendamentoEmEdicao?.userId.isNotEmpty == true
+        ? _agendamentoEmEdicao!.userId
+        : (_userId.isNotEmpty ? _userId : 'user_${DateTime.now().millisecondsSinceEpoch}');
+
     final agendamento = Agendament()
       ..id = '$placa-$telefone-${AgendamentoStore.formatarChaveHorario(dataSelecionada, horarioSelecionado!)}'
       ..nome = nome
@@ -912,9 +922,10 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
       ..data = dataSelecionada
       ..horario = horarioSelecionado!
       ..status = 'Confirmado'
-      ..userId = _userId;
+      ..userId = userIdParaSalvar;
 
     store.salvarOuAtualizar(agendamento);
+    _agendamentoEmEdicao = null;
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_phone', telefone);
@@ -937,6 +948,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
 
   void editarAgendamento(Agendament item) {
     setState(() {
+      _agendamentoEmEdicao = item;
       nomeController.text = item.nome;
       telefoneController.text = item.telefone;
       servicoSelecionado = item.servico;
