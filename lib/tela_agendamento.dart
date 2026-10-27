@@ -400,17 +400,13 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
       );
     }
 
-    // Lista de Meus Agendamentos (Futuros acima, Passados abaixo e opacos)
+    // Lista de Meus Agendamentos (Restrita estritamente ao ID único do usuário)
     Widget buildMeusAgendamentos() {
       return ValueListenableBuilder<List<Agendament>>(
         valueListenable: store,
         builder: (context, lista, child) {
-          final telInformado = telefoneController.text.trim();
-
           final meusAgendamentos = lista.where((item) {
-            bool matchUser = _userId.isNotEmpty && item.userId == _userId;
-            bool matchTel = telInformado.isNotEmpty && item.telefone.trim() == telInformado;
-            return matchUser || matchTel;
+            return _userId.isNotEmpty && item.userId == _userId;
           }).toList();
 
           if (meusAgendamentos.isEmpty) return const SizedBox.shrink();
