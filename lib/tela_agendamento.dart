@@ -201,77 +201,72 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
     ];
     final nomeMes = '${meses[dataSelecionada.month - 1]} de ${dataSelecionada.year}';
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Container(
-          padding: EdgeInsets.all(isCompact ? 6 : 10),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Container(
+      padding: EdgeInsets.all(isCompact ? 6 : 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.chevron_left_rounded, color: const Color(0xFF1565C0), size: isCompact ? 18 : 22),
-                    padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(minWidth: isCompact ? 22 : 32, minHeight: isCompact ? 22 : 32),
-                    onPressed: () {
-                      setState(() {
-                        dataSelecionada = DateTime(dataSelecionada.year, dataSelecionada.month - 1, 1);
-                        while (!store.isDiaUtil(dataSelecionada) && dataSelecionada.day < 28) {
-                          dataSelecionada = dataSelecionada.add(const Duration(days: 1));
-                        }
-                        horarioSelecionado = null;
-                      });
-                    },
-                  ),
-                  Flexible(
-                    child: Text(
-                      nomeMes,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: isCompact ? 11.5 : 14,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF1565C0),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.chevron_right_rounded, color: const Color(0xFF1565C0), size: isCompact ? 18 : 22),
-                    padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(minWidth: isCompact ? 22 : 32, minHeight: isCompact ? 22 : 32),
-                    onPressed: () {
-                      setState(() {
-                        dataSelecionada = DateTime(dataSelecionada.year, dataSelecionada.month + 1, 1);
-                        while (!store.isDiaUtil(dataSelecionada) && dataSelecionada.day < 28) {
-                          dataSelecionada = dataSelecionada.add(const Duration(days: 1));
-                        }
-                        horarioSelecionado = null;
-                      });
-                    },
-                  ),
-                ],
+              IconButton(
+                icon: Icon(Icons.chevron_left_rounded, color: const Color(0xFF1565C0), size: isCompact ? 18 : 22),
+                padding: EdgeInsets.zero,
+                constraints: BoxConstraints(minWidth: isCompact ? 22 : 32, minHeight: isCompact ? 22 : 32),
+                onPressed: () {
+                  setState(() {
+                    dataSelecionada = DateTime(dataSelecionada.year, dataSelecionada.month - 1, 1);
+                    while (!store.isDiaUtil(dataSelecionada) && dataSelecionada.day < 28) {
+                      dataSelecionada = dataSelecionada.add(const Duration(days: 1));
+                    }
+                    horarioSelecionado = null;
+                  });
+                },
               ),
-              SizedBox(height: isCompact ? 4 : 6),
-              GridView.count(
-                crossAxisCount: 7,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: isCompact ? 2 : 4,
-                mainAxisSpacing: isCompact ? 2 : 4,
-                childAspectRatio: isCompact ? 0.98 : 1.15,
-                children: diaWidgets,
+              Flexible(
+                child: Text(
+                  nomeMes,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: isCompact ? 11.5 : 14,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1565C0),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.chevron_right_rounded, color: const Color(0xFF1565C0), size: isCompact ? 18 : 22),
+                padding: EdgeInsets.zero,
+                constraints: BoxConstraints(minWidth: isCompact ? 22 : 32, minHeight: isCompact ? 22 : 32),
+                onPressed: () {
+                  setState(() {
+                    dataSelecionada = DateTime(dataSelecionada.year, dataSelecionada.month + 1, 1);
+                    while (!store.isDiaUtil(dataSelecionada) && dataSelecionada.day < 28) {
+                      dataSelecionada = dataSelecionada.add(const Duration(days: 1));
+                    }
+                    horarioSelecionado = null;
+                  });
+                },
               ),
             ],
           ),
-        ),
+          SizedBox(height: isCompact ? 4 : 6),
+          GridView.count(
+            crossAxisCount: 7,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: isCompact ? 2 : 4,
+            mainAxisSpacing: isCompact ? 2 : 4,
+            childAspectRatio: isCompact ? 0.98 : 1.15,
+            children: diaWidgets,
+          ),
+        ],
       ),
     );
   }
@@ -544,133 +539,141 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
               ],
             );
 
-            final horariosWidget = Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  isCompact ? 'Horários *' : 'Horários Disponíveis (08:30 às 17:30) *',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: isCompact ? 12 : 14,
+            final horariosWidget = Container(
+              padding: EdgeInsets.all(isCompact ? 6 : 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    isCompact ? 'Horários *' : 'Horários Disponíveis (08:30 às 17:30) *',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: isCompact ? 12 : 14,
+                    ),
                   ),
-                ),
-                SizedBox(height: isCompact ? 4 : 8),
+                  SizedBox(height: isCompact ? 4 : 8),
 
-                ValueListenableBuilder<List<Agendament>>(
-                  valueListenable: store,
-                  builder: (context, lista, child) {
-                    final ehDiaBloqueado = store.isDiaBloqueado(dataSelecionada);
+                  ValueListenableBuilder<List<Agendament>>(
+                    valueListenable: store,
+                    builder: (context, lista, child) {
+                      final ehDiaBloqueado = store.isDiaBloqueado(dataSelecionada);
 
-                    if (ehDiaBloqueado) {
-                      return Container(
-                        padding: EdgeInsets.all(isCompact ? 8 : 12),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.red.shade200),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.block, color: Colors.red, size: isCompact ? 16 : 20),
-                            SizedBox(width: isCompact ? 4 : 8),
-                            Expanded(
-                              child: Text(
-                                'Atendimento indisponível nesta data.',
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: isCompact ? 11 : 13,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-
-                    return GridView.count(
-                      crossAxisCount: colsHorarios,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: isCompact ? 3 : spacingHorarios,
-                      mainAxisSpacing: isCompact ? 3 : spacingHorarios,
-                      childAspectRatio: isCompact ? 3.2 : (isMedium ? 2.3 : 2.5),
-                      children: AgendamentoStore.todosHorarios.map((horario) {
-                        final disponivel = store.isHorarioDisponivel(dataSelecionada, horario);
-                        final selecionado = horarioSelecionado == horario;
-
-                        return Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: disponivel
-                                ? () {
-                                    setState(() {
-                                      horarioSelecionado = selecionado ? null : horario;
-                                    });
-                                  }
-                                : null,
+                      if (ehDiaBloqueado) {
+                        return Container(
+                          padding: EdgeInsets.all(isCompact ? 8 : 12),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
                             borderRadius: BorderRadius.circular(8),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              decoration: BoxDecoration(
-                                color: !disponivel
-                                    ? Colors.grey.shade200
-                                    : selecionado
-                                        ? Colors.green[700]
-                                        : Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: !disponivel
-                                      ? Colors.grey.shade300
-                                      : selecionado
-                                          ? Colors.green[700]!
-                                          : Colors.grey.shade300,
-                                  width: selecionado ? 1.5 : 1,
-                                ),
-                                boxShadow: selecionado
-                                    ? [
-                                        BoxShadow(
-                                          color: Colors.green.withValues(alpha: 0.3),
-                                          blurRadius: 4,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              alignment: Alignment.center,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  if (!disponivel) ...[
-                                    Icon(
-                                      Icons.lock_clock,
-                                      size: isCompact ? 11 : 13,
-                                      color: Colors.grey.shade500,
-                                    ),
-                                    SizedBox(width: isCompact ? 2 : 4),
-                                  ],
-                                  Text(
-                                    horario,
-                                    style: TextStyle(
-                                      fontSize: isCompact ? 10.5 : 12,
-                                      fontWeight: selecionado || disponivel ? FontWeight.bold : FontWeight.normal,
-                                      color: !disponivel
-                                          ? Colors.grey.shade500
-                                          : selecionado
-                                              ? Colors.white
-                                              : const Color(0xFF1E293B),
-                                    ),
+                            border: Border.all(color: Colors.red.shade200),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.block, color: Colors.red, size: isCompact ? 16 : 20),
+                              SizedBox(width: isCompact ? 4 : 8),
+                              Expanded(
+                                child: Text(
+                                  'Atendimento indisponível nesta data.',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: isCompact ? 11 : 13,
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         );
-                      }).toList(),
-                    );
-                  },
-                ),
-              ],
+                      }
+
+                      return GridView.count(
+                        crossAxisCount: colsHorarios,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: isCompact ? 3 : spacingHorarios,
+                        mainAxisSpacing: isCompact ? 3 : spacingHorarios,
+                        childAspectRatio: isCompact ? 3.2 : (isMedium ? 2.3 : 2.5),
+                        children: AgendamentoStore.todosHorarios.map((horario) {
+                          final disponivel = store.isHorarioDisponivel(dataSelecionada, horario);
+                          final selecionado = horarioSelecionado == horario;
+
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: disponivel
+                                  ? () {
+                                      setState(() {
+                                        horarioSelecionado = selecionado ? null : horario;
+                                      });
+                                    }
+                                  : null,
+                              borderRadius: BorderRadius.circular(8),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                decoration: BoxDecoration(
+                                  color: !disponivel
+                                      ? Colors.grey.shade200
+                                      : selecionado
+                                          ? Colors.green[700]
+                                          : Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: !disponivel
+                                        ? Colors.grey.shade300
+                                        : selecionado
+                                            ? Colors.green[700]!
+                                            : Colors.grey.shade300,
+                                    width: selecionado ? 1.5 : 1,
+                                  ),
+                                  boxShadow: selecionado
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.green.withValues(alpha: 0.3),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                alignment: Alignment.center,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (!disponivel) ...[
+                                      Icon(
+                                        Icons.lock_clock,
+                                        size: isCompact ? 11 : 13,
+                                        color: Colors.grey.shade500,
+                                      ),
+                                      SizedBox(width: isCompact ? 2 : 4),
+                                    ],
+                                    Text(
+                                      horario,
+                                      style: TextStyle(
+                                        fontSize: isCompact ? 10.5 : 12,
+                                        fontWeight: selecionado || disponivel ? FontWeight.bold : FontWeight.normal,
+                                        color: !disponivel
+                                            ? Colors.grey.shade500
+                                            : selecionado
+                                                ? Colors.white
+                                                : const Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+                ],
+              ),
             );
 
             if (isPC) {
