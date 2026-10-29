@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'model/Agendament.dart';
+import 'model/agendamento.dart';
 import 'services/agendamento_store.dart';
 import 'utils/formatters.dart';
 
@@ -23,7 +23,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
   final placaController = TextEditingController();
   final telefoneController = TextEditingController();
   String _userId = '';
-  Agendament? _agendamentoEmEdicao;
+  Agendamento? _agendamentoEmEdicao;
 
   @override
   void initState() {
@@ -82,13 +82,16 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
       final isFimDeSemanaHeader = ds == 'DOM' || ds == 'SÁB';
       diaWidgets.add(
         Center(
-          child: Text(
-            ds,
-            style: TextStyle(
-              fontSize: isCompact ? 8.5 : 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: isCompact ? 0 : 0.5,
-              color: isFimDeSemanaHeader ? Colors.grey.shade400 : Colors.blueGrey.shade600,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Text(
+              ds,
+              style: TextStyle(
+                fontSize: isCompact ? 9.5 : 11.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+                color: isFimDeSemanaHeader ? Colors.grey.shade400 : Colors.blueGrey.shade700,
+              ),
             ),
           ),
         ),
@@ -117,12 +120,12 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
       if (isSelecionado) {
         bgColor = const Color(0xFF1565C0);
         textColor = Colors.white;
-        border = Border.all(color: const Color(0xFF1565C0), width: isCompact ? 1 : 1.5);
+        border = Border.all(color: const Color(0xFF1565C0), width: 1.5);
         boxShadow = [
           BoxShadow(
             color: const Color(0xFF1565C0).withValues(alpha: 0.3),
-            blurRadius: isCompact ? 2 : 4,
-            offset: const Offset(0, 2),
+            blurRadius: 3,
+            offset: const Offset(0, 1.5),
           ),
         ];
       } else if (desabilitado) {
@@ -132,11 +135,11 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
       } else if (isHoje) {
         bgColor = const Color(0xFFEBF3FE);
         textColor = const Color(0xFF1565C0);
-        border = Border.all(color: const Color(0xFF1565C0), width: isCompact ? 1 : 1.5);
+        border = Border.all(color: const Color(0xFF1565C0), width: 1.5);
       } else {
         bgColor = Colors.white;
         textColor = const Color(0xFF1E293B);
-        border = Border.all(color: Colors.grey.shade200);
+        border = Border.all(color: Colors.grey.shade300);
       }
 
       diaWidgets.add(
@@ -151,17 +154,17 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                       horarioSelecionado = null;
                     });
                   },
-            borderRadius: BorderRadius.circular(isCompact ? 6 : 10),
+            borderRadius: BorderRadius.circular(8),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               decoration: BoxDecoration(
                 color: bgColor,
-                borderRadius: BorderRadius.circular(isCompact ? 6 : 10),
+                borderRadius: BorderRadius.circular(8),
                 border: border,
                 boxShadow: boxShadow,
               ),
               padding: EdgeInsets.symmetric(
-                vertical: isCompact ? 1 : 2,
+                vertical: isCompact ? 3 : 4,
                 horizontal: isCompact ? 1 : 2,
               ),
               child: Column(
@@ -170,18 +173,18 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                   Text(
                     '$dia',
                     style: TextStyle(
-                      fontSize: isCompact ? 10 : 12,
-                      fontWeight: isSelecionado || isHoje ? FontWeight.bold : FontWeight.w600,
+                      fontSize: isCompact ? 12 : 13.5,
+                      fontWeight: isSelecionado || isHoje ? FontWeight.bold : FontWeight.w700,
                       color: textColor,
                     ),
                   ),
-                  if (!isCompact) const SizedBox(height: 1),
+                  const SizedBox(height: 1),
                   if (isBloqueado && !isFimDeSemana)
-                    Text('Bloq', style: TextStyle(fontSize: isCompact ? 7 : 8, color: Colors.red.shade400, fontWeight: FontWeight.bold))
+                    Text('Bloq', style: TextStyle(fontSize: isCompact ? 8 : 9, color: Colors.red.shade400, fontWeight: FontWeight.bold))
                   else if (!desabilitado)
                     Container(
-                      width: isCompact ? 3 : 4,
-                      height: isCompact ? 3 : 4,
+                      width: isCompact ? 4 : 4.5,
+                      height: isCompact ? 4 : 4.5,
                       decoration: BoxDecoration(
                         color: isSelecionado ? Colors.white : Colors.green.shade600,
                         shape: BoxShape.circle,
@@ -202,10 +205,10 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
     final nomeMes = '${meses[dataSelecionada.month - 1]} de ${dataSelecionada.year}';
 
     return Container(
-      padding: EdgeInsets.all(isCompact ? 6 : 10),
+      padding: EdgeInsets.all(isCompact ? 8 : 10),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: Column(
@@ -215,9 +218,9 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
-                icon: Icon(Icons.chevron_left_rounded, color: const Color(0xFF1565C0), size: isCompact ? 18 : 22),
+                icon: Icon(Icons.chevron_left_rounded, color: const Color(0xFF1565C0), size: isCompact ? 20 : 24),
                 padding: EdgeInsets.zero,
-                constraints: BoxConstraints(minWidth: isCompact ? 22 : 32, minHeight: isCompact ? 22 : 32),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 onPressed: () {
                   setState(() {
                     dataSelecionada = DateTime(dataSelecionada.year, dataSelecionada.month - 1, 1);
@@ -233,7 +236,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                   nomeMes,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: isCompact ? 11.5 : 14,
+                    fontSize: isCompact ? 13.5 : 15.5,
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFF1565C0),
                   ),
@@ -241,9 +244,9 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.chevron_right_rounded, color: const Color(0xFF1565C0), size: isCompact ? 18 : 22),
+                icon: Icon(Icons.chevron_right_rounded, color: const Color(0xFF1565C0), size: isCompact ? 20 : 24),
                 padding: EdgeInsets.zero,
-                constraints: BoxConstraints(minWidth: isCompact ? 22 : 32, minHeight: isCompact ? 22 : 32),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 onPressed: () {
                   setState(() {
                     dataSelecionada = DateTime(dataSelecionada.year, dataSelecionada.month + 1, 1);
@@ -261,9 +264,9 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
             crossAxisCount: 7,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: isCompact ? 2 : 4,
-            mainAxisSpacing: isCompact ? 2 : 4,
-            childAspectRatio: isCompact ? 0.98 : 1.15,
+            crossAxisSpacing: isCompact ? 3 : 4,
+            mainAxisSpacing: isCompact ? 3 : 4,
+            childAspectRatio: isCompact ? 1.05 : 1.12,
             children: diaWidgets,
           ),
         ],
@@ -398,7 +401,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
 
     // Lista de Meus Agendamentos
     Widget buildMeusAgendamentos() {
-      return ValueListenableBuilder<List<Agendament>>(
+      return ValueListenableBuilder<List<Agendamento>>(
         valueListenable: store,
         builder: (context, lista, child) {
           final telInformado = telefoneController.text.trim().replaceAll(RegExp(r'\D'), '');
@@ -464,7 +467,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
             final isCompact = width < 480;
             final isMedium = width >= 480 && width < 720;
 
-            final colsHorarios = isPC ? 3 : (isCompact ? 2 : (isMedium ? 3 : 4));
+            final colsHorarios = isPC ? 3 : 4;
             final spacingHorarios = isCompact ? 4.0 : 8.0;
 
             final calendarioWidget = Column(
@@ -537,7 +540,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                 SizedBox(height: isCompact ? 3 : 8),
 
                 // Calendário do Cliente
-                _buildCalendarioCliente(isCompact: isCompact || isPC),
+                _buildCalendarioCliente(isCompact: isCompact),
               ],
             );
 
@@ -560,7 +563,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                   ),
                   SizedBox(height: isCompact ? 4 : 8),
 
-                  ValueListenableBuilder<List<Agendament>>(
+                  ValueListenableBuilder<List<Agendamento>>(
                     valueListenable: store,
                     builder: (context, lista, child) {
                       final ehDiaBloqueado = store.isDiaBloqueado(dataSelecionada);
@@ -596,9 +599,9 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                         crossAxisCount: colsHorarios,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        crossAxisSpacing: isCompact ? 3 : spacingHorarios,
-                        mainAxisSpacing: isCompact ? 3 : spacingHorarios,
-                        childAspectRatio: isCompact ? 3.2 : (isMedium ? 2.3 : 2.5),
+                        crossAxisSpacing: isCompact ? 4 : spacingHorarios,
+                        mainAxisSpacing: isCompact ? 4 : spacingHorarios,
+                        childAspectRatio: isCompact ? 2.5 : (isMedium ? 2.4 : 2.5),
                         children: AgendamentoStore.todosHorarios.map((horario) {
                           final disponivel = store.isHorarioDisponivel(dataSelecionada, horario);
                           final selecionado = horarioSelecionado == horario;
@@ -745,20 +748,29 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
                       children: [
                         buildFormulario(),
                         const SizedBox(height: 20),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 5,
-                              child: calendarioWidget,
-                            ),
-                            SizedBox(width: isCompact ? 8 : (isMedium ? 14 : 20)),
-                            Expanded(
-                              flex: isCompact ? 5 : 6,
-                              child: horariosWidget,
-                            ),
-                          ],
-                        ),
+                        width < 600
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  calendarioWidget,
+                                  const SizedBox(height: 16),
+                                  horariosWidget,
+                                ],
+                              )
+                            : Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    flex: 6,
+                                    child: calendarioWidget,
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    flex: 5,
+                                    child: horariosWidget,
+                                  ),
+                                ],
+                              ),
                       ],
                     ),
                   ),
@@ -772,7 +784,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
     );
   }
 
-  Widget _cardAgendamentoCliente(Agendament item) {
+  Widget _cardAgendamentoCliente(Agendamento item) {
     final isPassado = store.isHorarioNoPassado(item.data, item.horario);
 
     Color corStatus;
@@ -918,7 +930,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
         ? _agendamentoEmEdicao!.userId
         : (_userId.isNotEmpty ? _userId : 'user_${DateTime.now().millisecondsSinceEpoch}');
 
-    final agendamento = Agendament()
+    final agendamento = Agendamento()
       ..id = '$placa-$telefone-${AgendamentoStore.formatarChaveHorario(dataSelecionada, horarioSelecionado!)}'
       ..nome = nome
       ..placa = placa
@@ -936,6 +948,8 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
     await prefs.setString('user_phone', telefone);
     await prefs.setString('user_name', nome);
 
+    if (!mounted) return;
+
     nomeController.clear();
     placaController.clear();
     telefoneController.text = telefone;
@@ -951,7 +965,7 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
     );
   }
 
-  void editarAgendamento(Agendament item) {
+  void editarAgendamento(Agendamento item) {
     setState(() {
       _agendamentoEmEdicao = item;
       nomeController.text = item.nome;

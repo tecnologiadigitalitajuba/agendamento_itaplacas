@@ -2,9 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
-import '../model/Agendament.dart';
+import '../model/agendamento.dart';
 
-class AgendamentoStore extends ValueNotifier<List<Agendament>> {
+class AgendamentoStore extends ValueNotifier<List<Agendamento>> {
   static final AgendamentoStore _instance = AgendamentoStore._internal();
   factory AgendamentoStore() => _instance;
 
@@ -65,7 +65,7 @@ class AgendamentoStore extends ValueNotifier<List<Agendament>> {
     if (_isFirebaseInicializado) {
       // Escuta coleção de agendamentos em tempo real
       FirebaseFirestore.instance.collection('agendamentos').snapshots().listen((snapshot) {
-        final lista = snapshot.docs.map((doc) => Agendament.fromMap(doc.data(), doc.id)).toList();
+        final lista = snapshot.docs.map((doc) => Agendamento.fromMap(doc.data(), doc.id)).toList();
         value = lista;
       });
 
@@ -186,7 +186,7 @@ class AgendamentoStore extends ValueNotifier<List<Agendament>> {
       dataUtil = dataUtil.add(const Duration(days: 1));
     }
 
-    final exemplo1 = Agendament()
+    final exemplo1 = Agendamento()
       ..id = 'ABC-1D23-(35) 99999-8888'
       ..nome = 'Carlos Silva'
       ..placa = 'ABC-1D23'
@@ -196,7 +196,7 @@ class AgendamentoStore extends ValueNotifier<List<Agendament>> {
       ..servico = 'Troca de Placa'
       ..status = 'Confirmado';
 
-    final exemplo2 = Agendament()
+    final exemplo2 = Agendamento()
       ..id = 'ZERO KM-(35) 98888-7777'
       ..nome = 'Mariana Oliveira'
       ..placa = 'ZERO KM'
@@ -209,13 +209,13 @@ class AgendamentoStore extends ValueNotifier<List<Agendament>> {
     value = [exemplo1, exemplo2];
   }
 
-  Future<void> salvarOuAtualizar(Agendament agendamento) async {
+  Future<void> salvarOuAtualizar(Agendamento agendamento) async {
     if (isHorarioNoPassado(agendamento.data, agendamento.horario)) {
       throw Exception(
           'Não é permitido realizar agendamentos em dias ou horários do passado.');
     }
 
-    final lista = List<Agendament>.from(value);
+    final lista = List<Agendamento>.from(value);
 
     final placaNova = agendamento.placa.trim().toUpperCase();
     final nomeNovo = agendamento.nome.trim().toLowerCase();
@@ -272,7 +272,7 @@ class AgendamentoStore extends ValueNotifier<List<Agendament>> {
   }
 
   Future<void> alterarStatus(String id, String novoStatus) async {
-    final lista = List<Agendament>.from(value);
+    final lista = List<Agendamento>.from(value);
     final idx = lista.indexWhere((i) => i.id == id);
     if (idx != -1) {
       lista[idx].status = novoStatus;
@@ -288,7 +288,7 @@ class AgendamentoStore extends ValueNotifier<List<Agendament>> {
   }
 
   Future<void> remover(String id) async {
-    final lista = List<Agendament>.from(value);
+    final lista = List<Agendamento>.from(value);
     lista.removeWhere((i) => i.id == id);
     value = lista;
 

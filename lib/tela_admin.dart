@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'model/Agendament.dart';
+import 'model/agendamento.dart';
 import 'services/agendamento_store.dart';
 import 'utils/formatters.dart';
 
@@ -33,7 +33,7 @@ class _TelaAdminState extends State<TelaAdmin> {
     super.dispose();
   }
 
-  int _getQtdAgendamentosNoDia(List<Agendament> lista, DateTime data) {
+  int _getQtdAgendamentosNoDia(List<Agendamento> lista, DateTime data) {
     final chave = AgendamentoStore.formatarChaveData(data);
     return lista.where((i) =>
     AgendamentoStore.formatarChaveData(i.data) == chave &&
@@ -48,7 +48,7 @@ class _TelaAdminState extends State<TelaAdmin> {
     return '${meses[data.month - 1]} de ${data.year}';
   }
 
-  Widget _buildCalendarioMensal(List<Agendament> lista) {
+  Widget _buildCalendarioMensal(List<Agendamento> lista) {
     final hoje = DateTime.now();
     final primeiroDiaDoMes = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month, 1);
     final ultimoDiaDoMes = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month + 1, 0);
@@ -62,13 +62,16 @@ class _TelaAdminState extends State<TelaAdmin> {
       final isFimDeSemanaHeader = ds == 'DOM' || ds == 'SÁB';
       diaWidgets.add(
         Center(
-          child: Text(
-            ds,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-              color: isFimDeSemanaHeader ? Colors.grey.shade400 : Colors.blueGrey.shade600,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Text(
+              ds,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+                color: isFimDeSemanaHeader ? Colors.grey.shade400 : Colors.blueGrey.shade700,
+              ),
             ),
           ),
         ),
@@ -105,8 +108,8 @@ class _TelaAdminState extends State<TelaAdmin> {
         boxShadow = [
           BoxShadow(
             color: const Color(0xFF0D47A1).withValues(alpha: 0.3),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            blurRadius: 3,
+            offset: const Offset(0, 1.5),
           ),
         ];
       } else if (isFimDeSemana) {
@@ -124,7 +127,7 @@ class _TelaAdminState extends State<TelaAdmin> {
       } else {
         bgColor = Colors.white;
         textColor = const Color(0xFF1E293B);
-        border = Border.all(color: Colors.grey.shade200);
+        border = Border.all(color: Colors.grey.shade300);
       }
 
       diaWidgets.add(
@@ -138,16 +141,16 @@ class _TelaAdminState extends State<TelaAdmin> {
                 dataSelecionadaAdmin = dataAtual;
               });
             },
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               decoration: BoxDecoration(
                 color: bgColor,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
                 border: border,
                 boxShadow: boxShadow,
               ),
-              padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+              padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 2),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -157,8 +160,8 @@ class _TelaAdminState extends State<TelaAdmin> {
                       Text(
                         '$dia',
                         style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isSelecionado || isHoje ? FontWeight.bold : FontWeight.w600,
+                          fontSize: 13,
+                          fontWeight: isSelecionado || isHoje ? FontWeight.bold : FontWeight.w700,
                           color: textColor,
                         ),
                       ),
@@ -187,7 +190,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                         child: Text(
                           '$qtd',
                           style: TextStyle(
-                            fontSize: 9,
+                            fontSize: 9.5,
                             fontWeight: FontWeight.bold,
                             color: isSelecionado ? const Color(0xFF0D47A1) : Colors.white,
                           ),
@@ -203,7 +206,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                         child: Text(
                           'Bloq',
                           style: TextStyle(
-                            fontSize: 8,
+                            fontSize: 8.5,
                             fontWeight: FontWeight.bold,
                             color: isSelecionado ? Colors.white : Colors.red.shade800,
                           ),
@@ -211,8 +214,8 @@ class _TelaAdminState extends State<TelaAdmin> {
                       )
                     else
                       Container(
-                        width: 3,
-                        height: 3,
+                        width: 3.5,
+                        height: 3.5,
                         decoration: BoxDecoration(
                           color: isSelecionado ? Colors.white38 : Colors.grey.shade300,
                           shape: BoxShape.circle,
@@ -231,7 +234,7 @@ class _TelaAdminState extends State<TelaAdmin> {
 
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
+        constraints: const BoxConstraints(maxWidth: 440),
         child: Column(
           children: [
             // Navegação do Mês Compacta e Moderna
@@ -262,7 +265,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                       ),
                       Text(
                         _formatarMesAno(dataSelecionadaAdmin),
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1)),
+                        style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1)),
                       ),
                       IconButton(
                         icon: const Icon(Icons.chevron_right_rounded, size: 22, color: Color(0xFF0D47A1)),
@@ -304,14 +307,14 @@ class _TelaAdminState extends State<TelaAdmin> {
               ),
             ),
             const SizedBox(height: 8),
-            // Grid do Calendário Compacto
+            // Grid do Calendário
             GridView.count(
               crossAxisCount: 7,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 4,
-              mainAxisSpacing: 4,
-              childAspectRatio: 0.98,
+              crossAxisSpacing: 3,
+              mainAxisSpacing: 3,
+              childAspectRatio: 1.05,
               children: diaWidgets,
             ),
           ],
@@ -336,7 +339,7 @@ class _TelaAdminState extends State<TelaAdmin> {
           ],
         ),
       ),
-      body: ValueListenableBuilder<List<Agendament>>(
+      body: ValueListenableBuilder<List<Agendamento>>(
         valueListenable: store,
         builder: (context, lista, child) {
           final hoje = DateTime.now();
@@ -516,7 +519,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                                 final ehBloqueadoAdmin = store.isHorarioBloqueadoAdmin(dataSelecionadaAdmin, horario);
                                 final isPassadoHorario = store.isHorarioNoPassado(dataSelecionadaAdmin, horario);
 
-                                final agendamentoOcupado = lista.cast<Agendament?>().firstWhere(
+                                final agendamentoOcupado = lista.cast<Agendamento?>().firstWhere(
                                       (i) =>
                                   i != null &&
                                       AgendamentoStore.formatarChaveData(i.data) == chaveData &&
@@ -880,7 +883,7 @@ class _TelaAdminState extends State<TelaAdmin> {
     );
   }
 
-  Widget _cardAgendamentoAdmin(Agendament item, {bool isPassado = false}) {
+  Widget _cardAgendamentoAdmin(Agendamento item, {bool isPassado = false}) {
     Color corBadge;
     switch (item.status) {
       case 'Confirmado':
@@ -1053,7 +1056,7 @@ class _TelaAdminState extends State<TelaAdmin> {
   }
 
   void _gerenciarOpcoesHorarioAdmin(
-      DateTime data, String horario, Agendament? agendamento, bool ehBloqueado) {
+      DateTime data, String horario, Agendamento? agendamento, bool ehBloqueado) {
     final dataFormatada =
         '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}';
 
@@ -1176,7 +1179,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     DropdownButtonFormField<String>(
-                      value: servico,
+                      initialValue: servico,
                       decoration: const InputDecoration(labelText: 'Serviço', border: OutlineInputBorder()),
                       items: ['Troca de Placa', 'Instalação de Placa']
                           .map((s) => DropdownMenuItem(value: s, child: Text(s)))
@@ -1265,7 +1268,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                       return;
                     }
 
-                    final agendamento = Agendament()
+                    final agendamento = Agendamento()
                       ..id = '$placa-$tel-${AgendamentoStore.formatarChaveHorario(data, horario)}'
                       ..nome = nome
                       ..placa = placa
@@ -1292,7 +1295,7 @@ class _TelaAdminState extends State<TelaAdmin> {
     );
   }
 
-  void _abrirWhatsAppCliente(Agendament item) async {
+  void _abrirWhatsAppCliente(Agendamento item) async {
     final telApenasNumeros = item.telefone.replaceAll(RegExp(r'\D'), '');
     final dataFormatada =
         '${item.data.day.toString().padLeft(2, '0')}/${item.data.month.toString().padLeft(2, '0')}/${item.data.year}';
@@ -1312,7 +1315,7 @@ class _TelaAdminState extends State<TelaAdmin> {
     }
   }
 
-  void _confirmarExclusao(Agendament item) {
+  void _confirmarExclusao(Agendamento item) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1339,7 +1342,7 @@ class _TelaAdminState extends State<TelaAdmin> {
     );
   }
 
-  void _abrirDialogEditarAgendamento(Agendament item) {
+  void _abrirDialogEditarAgendamento(Agendamento item) {
     final nomeController = TextEditingController(text: item.nome);
     final telefoneController = TextEditingController(text: item.telefone);
     final placaController = TextEditingController(text: item.placa == 'ZERO KM' ? '' : item.placa);
@@ -1409,8 +1412,11 @@ class _TelaAdminState extends State<TelaAdmin> {
                               onChanged: (val) {
                                 setStateDialog(() {
                                   zeroKm = val ?? false;
-                                  if (zeroKm) placaController.text = 'ZERO KM';
-                                  else placaController.text = '';
+                                  if (zeroKm) {
+                                    placaController.text = 'ZERO KM';
+                                  } else {
+                                    placaController.text = '';
+                                  }
                                 });
                               },
                             ),
@@ -1420,7 +1426,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
-                      value: ['Troca de Placa', 'Instalação de Placa'].contains(servicoAtual) ? servicoAtual : 'Troca de Placa',
+                      initialValue: ['Troca de Placa', 'Instalação de Placa'].contains(servicoAtual) ? servicoAtual : 'Troca de Placa',
                       decoration: const InputDecoration(
                         labelText: 'Serviço',
                         border: OutlineInputBorder(),
@@ -1435,7 +1441,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
-                      value: ['Confirmado', 'Pendente', 'Concluído', 'Cancelado'].contains(statusAtual) ? statusAtual : 'Confirmado',
+                      initialValue: ['Confirmado', 'Pendente', 'Concluído', 'Cancelado'].contains(statusAtual) ? statusAtual : 'Confirmado',
                       decoration: const InputDecoration(
                         labelText: 'Status',
                         border: OutlineInputBorder(),

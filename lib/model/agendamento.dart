@@ -1,4 +1,4 @@
-class Agendament {
+class Agendamento {
   late String id;
   late String nome;
   late String placa;
@@ -10,7 +10,7 @@ class Agendament {
   String observacao = '';
   String userId = ''; // ID único do usuário/dispositivo
 
-  Agendament();
+  Agendamento();
 
   Map<String, dynamic> toMap() {
     return {
@@ -27,8 +27,8 @@ class Agendament {
     };
   }
 
-  factory Agendament.fromMap(Map<String, dynamic> map, String docId) {
-    final item = Agendament();
+  factory Agendamento.fromMap(Map<String, dynamic> map, String docId) {
+    final item = Agendamento();
     item.id = docId.isNotEmpty ? docId : (map['id'] ?? '');
     item.nome = map['nome'] ?? '';
     item.placa = map['placa'] ?? '';
