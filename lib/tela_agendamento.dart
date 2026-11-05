@@ -997,3 +997,10 @@ Widget telaAgendamentoPreview() {
     home: TelaAgendamento(),
   );
 }
+
+@Preview(name: 'Celular')
+Widget telaAgendamentoMobilePreview() {
+  return const MaterialApp(
+    home: TelaAgendamento(),
+  );
+}

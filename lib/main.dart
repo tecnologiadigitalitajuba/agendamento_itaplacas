@@ -403,3 +403,10 @@ Widget mainPreview() {
     home: TelaPrincipal(),
   );
 }
+
+@Preview(name: 'Celular')
+Widget mobilePreview() {
+  return const MaterialApp(
+    home: TelaPrincipal(),
+  );
+}

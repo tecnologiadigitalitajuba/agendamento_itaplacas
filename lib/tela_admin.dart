@@ -1512,3 +1512,10 @@ Widget telaAdminPreview() {
     home: TelaAdmin(),
   );
 }
+
+@Preview(name: 'Celular')
+Widget telaAdminMobilePreview() {
+  return const MaterialApp(
+    home: TelaAdmin(),
+  );
+}
