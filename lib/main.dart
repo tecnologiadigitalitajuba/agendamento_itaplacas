@@ -397,16 +397,15 @@ class CartaoServico extends StatelessWidget {
   }
 }
 
-@Preview()
-Widget mainPreview() {
-  return const MaterialApp(
-    home: TelaPrincipal(),
-  );
-}
-
-@Preview(name: 'Celular')
+@Preview(name: 'Celular 300x800')
 Widget mobilePreview() {
   return const MaterialApp(
-    home: TelaPrincipal(),
+    home: Center(
+      child: SizedBox(
+        width: 300,
+        height: 800,
+        child: TelaPrincipal(),
+      ),
+    ),
   );
 }

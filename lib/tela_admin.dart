@@ -1513,9 +1513,15 @@ Widget telaAdminPreview() {
   );
 }
 
-@Preview(name: 'Celular')
+@Preview(name: 'Celular 300x800')
 Widget telaAdminMobilePreview() {
   return const MaterialApp(
-    home: TelaAdmin(),
+    home: Center(
+      child: SizedBox(
+        width: 300,
+        height: 800,
+        child: TelaAdmin(),
+      ),
+    ),
   );
 }
