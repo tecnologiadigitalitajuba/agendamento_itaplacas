@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'firebase_options.dart';
@@ -394,4 +395,11 @@ class CartaoServico extends StatelessWidget {
       ),
     );
   }
+}
+
+@Preview()
+Widget mainPreview() {
+  return const MaterialApp(
+    home: TelaPrincipal(),
+  );
 }

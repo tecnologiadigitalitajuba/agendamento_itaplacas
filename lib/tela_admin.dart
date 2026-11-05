@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'model/agendamento.dart';
@@ -1503,4 +1504,11 @@ class _TelaAdminState extends State<TelaAdmin> {
       },
     );
   }
+}
+
+@Preview()
+Widget telaAdminPreview() {
+  return const MaterialApp(
+    home: TelaAdmin(),
+  );
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'model/agendamento.dart';
@@ -988,4 +989,11 @@ class _TelaAgendamentoState extends State<TelaAgendamento> {
       ),
     );
   }
+}
+
+@Preview()
+Widget telaAgendamentoPreview() {
+  return const MaterialApp(
+    home: TelaAgendamento(),
+  );
 }
