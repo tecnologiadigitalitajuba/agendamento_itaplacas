@@ -89,8 +89,17 @@ class AgendamentoStore extends ValueNotifier<List<Agendamento>> {
     return data.weekday >= DateTime.monday && data.weekday <= DateTime.friday;
   }
 
+  bool isDiaUtilAdmin(DateTime data) {
+    return data.weekday >= DateTime.monday && data.weekday <= DateTime.saturday;
+  }
+
   bool isDiaBloqueado(DateTime data) {
     if (!isDiaUtil(data)) return true; // Fim de semana desativado
+    return diasBloqueados.value.contains(formatarChaveData(data));
+  }
+
+  bool isDiaBloqueadoAdmin(DateTime data) {
+    if (data.weekday == DateTime.sunday) return true; // Domingo desativado
     return diasBloqueados.value.contains(formatarChaveData(data));
   }
 

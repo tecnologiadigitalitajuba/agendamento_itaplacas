@@ -998,12 +998,12 @@ Widget telaAgendamentoPreview() {
   );
 }
 
-@Preview(name: 'Celular 300x800')
+@Preview(name: 'Celular 350x800')
 Widget telaAgendamentoMobilePreview() {
   return const MaterialApp(
     home: Center(
       child: SizedBox(
-        width: 300,
+        width: 350,
         height: 800,
         child: TelaAgendamento(),
       ),

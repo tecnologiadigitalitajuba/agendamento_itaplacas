@@ -402,7 +402,7 @@ Widget mobilePreview() {
   return const MaterialApp(
     home: Center(
       child: SizedBox(
-        width: 300,
+        width: 350,
         height: 800,
         child: TelaPrincipal(),
       ),

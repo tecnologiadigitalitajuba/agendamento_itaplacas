@@ -23,7 +23,7 @@ class _TelaAdminState extends State<TelaAdmin> {
   @override
   void initState() {
     super.initState();
-    while (!store.isDiaUtil(dataSelecionadaAdmin)) {
+    while (!store.isDiaUtilAdmin(dataSelecionadaAdmin)) {
       dataSelecionadaAdmin = dataSelecionadaAdmin.add(const Duration(days: 1));
     }
   }
@@ -93,8 +93,8 @@ class _TelaAdminState extends State<TelaAdmin> {
       final isSelecionado = dataAtual.year == dataSelecionadaAdmin.year &&
           dataAtual.month == dataSelecionadaAdmin.month &&
           dataAtual.day == dataSelecionadaAdmin.day;
-      final isFimDeSemana = dataAtual.weekday == DateTime.saturday || dataAtual.weekday == DateTime.sunday;
-      final isBloqueado = store.isDiaBloqueado(dataAtual);
+      final isFimDeSemana = dataAtual.weekday == DateTime.sunday;
+      final isBloqueado = store.isDiaBloqueadoAdmin(dataAtual);
       final qtd = _getQtdAgendamentosNoDia(lista, dataAtual);
 
       Color bgColor;
@@ -258,7 +258,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                         onPressed: () {
                           setState(() {
                             dataSelecionadaAdmin = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month - 1, 1);
-                            while (!store.isDiaUtil(dataSelecionadaAdmin) && dataSelecionadaAdmin.day < 28) {
+                            while (!store.isDiaUtilAdmin(dataSelecionadaAdmin) && dataSelecionadaAdmin.day < 28) {
                               dataSelecionadaAdmin = dataSelecionadaAdmin.add(const Duration(days: 1));
                             }
                           });
@@ -276,7 +276,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                         onPressed: () {
                           setState(() {
                             dataSelecionadaAdmin = DateTime(dataSelecionadaAdmin.year, dataSelecionadaAdmin.month + 1, 1);
-                            while (!store.isDiaUtil(dataSelecionadaAdmin) && dataSelecionadaAdmin.day < 28) {
+                            while (!store.isDiaUtilAdmin(dataSelecionadaAdmin) && dataSelecionadaAdmin.day < 28) {
                               dataSelecionadaAdmin = dataSelecionadaAdmin.add(const Duration(days: 1));
                             }
                           });
@@ -295,7 +295,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                       onPressed: () {
                         setState(() {
                           var h = DateTime.now();
-                          while (!store.isDiaUtil(h)) {
+                          while (!store.isDiaUtilAdmin(h)) {
                             h = h.add(const Duration(days: 1));
                           }
                           dataSelecionadaAdmin = h;
@@ -439,7 +439,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                         ValueListenableBuilder<Set<String>>(
                           valueListenable: store.diasBloqueados,
                           builder: (context, dias, child) {
-                            final ehDiaBloqueado = store.isDiaBloqueado(dataSelecionadaAdmin);
+                            final ehDiaBloqueado = store.isDiaBloqueadoAdmin(dataSelecionadaAdmin);
                             return Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                               decoration: BoxDecoration(
@@ -457,7 +457,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      ehDiaBloqueado ? 'Dia Bloqueado' : 'Dia Aberto (Seg-Sex)',
+                                      ehDiaBloqueado ? 'Dia Bloqueado' : 'Dia Aberto (Seg-Sáb)',
                                       style: TextStyle(
                                         color: ehDiaBloqueado ? Colors.red.shade900 : Colors.blue.shade900,
                                         fontWeight: FontWeight.bold,
@@ -511,7 +511,7 @@ class _TelaAdminState extends State<TelaAdmin> {
                           valueListenable: store.horariosBloqueados,
                           builder: (context, horarios, child) {
                             final chaveData = AgendamentoStore.formatarChaveData(dataSelecionadaAdmin);
-                            final ehDiaBloqueado = store.isDiaBloqueado(dataSelecionadaAdmin);
+                            final ehDiaBloqueado = store.isDiaBloqueadoAdmin(dataSelecionadaAdmin);
 
                             return Wrap(
                               spacing: 6,
@@ -1506,19 +1506,12 @@ class _TelaAdminState extends State<TelaAdmin> {
   }
 }
 
-@Preview()
-Widget telaAdminPreview() {
-  return const MaterialApp(
-    home: TelaAdmin(),
-  );
-}
-
-@Preview(name: 'Celular 300x800')
+@Preview(name: 'Celular 350x800')
 Widget telaAdminMobilePreview() {
   return const MaterialApp(
     home: Center(
       child: SizedBox(
-        width: 300,
+        width: 350,
         height: 800,
         child: TelaAdmin(),
       ),
